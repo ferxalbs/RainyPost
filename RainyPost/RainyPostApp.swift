@@ -31,12 +31,12 @@ struct RainyPostApp: App {
             MainWindowView()
                 .environmentObject(appState)
                 .background(WindowAccessor())
-                .frame(minWidth: 1200, minHeight: 800)
+                .frame(minWidth: 800, minHeight: 400)
         }
         .modelContainer(sharedModelContainer)
         .windowStyle(.hiddenTitleBar)
         .windowToolbarStyle(.unified(showsTitle: false))
-        .defaultSize(width: 1200, height: 800)
+        .defaultSize(width: 800, height: 400)
     }
 }
 
