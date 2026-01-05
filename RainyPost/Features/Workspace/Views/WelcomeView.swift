@@ -11,48 +11,53 @@ struct WelcomeView: View {
     @Binding var showingWorkspacePicker: Bool
     
     var body: some View {
-        VStack(spacing: 28) {
-            Spacer()
+        ZStack {
+            VisualEffectView(material: .underWindowBackground, blendingMode: .behindWindow)
+                .ignoresSafeArea()
             
-            // Logo
-            VStack(spacing: 12) {
-                Image(systemName: "cloud.rain.fill")
-                    .font(.system(size: 48, weight: .light))
-                    .foregroundStyle(.blue.gradient)
+            VStack(spacing: 28) {
+                Spacer()
                 
-                Text("RainyPost")
-                    .font(.system(size: 24, weight: .light))
+                // Logo
+                VStack(spacing: 12) {
+                    Image(systemName: "cloud.rain.fill")
+                        .font(.system(size: 48, weight: .light))
+                        .foregroundStyle(.blue.gradient)
+                    
+                    Text("RainyPost")
+                        .font(.system(size: 24, weight: .light))
+                    
+                    Text("Native macOS API Client")
+                        .font(.system(size: 12))
+                        .foregroundColor(.secondary)
+                }
                 
-                Text("Native macOS API Client")
-                    .font(.system(size: 12))
+                // Buttons
+                VStack(spacing: 8) {
+                    Button(action: { showingWorkspacePicker = true }) {
+                        Label("Create New Workspace", systemImage: "plus.circle.fill")
+                            .frame(width: 180)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.large)
+                    
+                    Button(action: { showingWorkspacePicker = true }) {
+                        Label("Open Existing", systemImage: "folder")
+                            .frame(width: 180)
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.large)
+                }
+                
+                Spacer()
+                
+                Text("Offline-first • File-based • Secure")
+                    .font(.system(size: 10))
                     .foregroundColor(.secondary)
+                    .padding(.bottom, 12)
             }
-            
-            // Buttons
-            VStack(spacing: 8) {
-                Button(action: { showingWorkspacePicker = true }) {
-                    Label("Create New Workspace", systemImage: "plus.circle.fill")
-                        .frame(width: 180)
-                }
-                .buttonStyle(.borderedProminent)
-                .controlSize(.large)
-                
-                Button(action: { showingWorkspacePicker = true }) {
-                    Label("Open Existing", systemImage: "folder")
-                        .frame(width: 180)
-                }
-                .buttonStyle(.bordered)
-                .controlSize(.large)
-            }
-            
-            Spacer()
-            
-            Text("Offline-first • File-based • Secure")
-                .font(.system(size: 10))
-                .foregroundColor(.secondary)
-                .padding(.bottom, 12)
+            .padding(32)
         }
-        .padding(32)
         .frame(minWidth: 800, minHeight: 400)
     }
 }
