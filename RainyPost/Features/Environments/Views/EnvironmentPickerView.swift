@@ -9,6 +9,7 @@ import SwiftUI
 
 struct EnvironmentPickerView: View {
     @EnvironmentObject private var appState: AppState
+    @State private var showingManager = false
     
     var body: some View {
         Menu {
@@ -34,30 +35,33 @@ struct EnvironmentPickerView: View {
             }
             
             Button("Manage Environments...") {
-                // TODO: Open environment manager
+                showingManager = true
             }
         } label: {
-            HStack(spacing: 5) {
+            HStack(spacing: 7) {
                 Circle()
                     .fill(appState.activeEnvironment != nil ? Color.green : Color.secondary.opacity(0.3))
-                    .frame(width: 6, height: 6)
+                    .frame(width: 8, height: 8)
                 
                 Text(appState.activeEnvironment?.name ?? "No Environment")
-                    .font(.system(size: 11, weight: .medium))
+                    .font(.system(size: 13, weight: .medium))
                 
                 Image(systemName: "chevron.down")
-                    .font(.system(size: 8, weight: .semibold))
+                    .font(.system(size: 9, weight: .semibold))
             }
             .foregroundColor(.primary)
-            .padding(.horizontal, 10)
-            .padding(.vertical, 5)
-            .background(.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 6))
+            .padding(.horizontal, 14)
+            .padding(.vertical, 8)
+            .background(.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 8))
             .overlay(
-                RoundedRectangle(cornerRadius: 6)
+                RoundedRectangle(cornerRadius: 8)
                     .strokeBorder(.white.opacity(0.1), lineWidth: 1)
             )
         }
         .menuStyle(.borderlessButton)
+        .sheet(isPresented: $showingManager) {
+            EnvironmentManagerView()
+        }
     }
 }
 

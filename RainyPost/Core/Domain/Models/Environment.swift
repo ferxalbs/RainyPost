@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct APIEnvironment: Identifiable, Codable {
+struct APIEnvironment: Identifiable, Codable, Equatable {
     let id: UUID
     var name: String
     var variables: [Variable]
@@ -22,5 +22,9 @@ struct APIEnvironment: Identifiable, Codable {
         self.isActive = false
         self.createdAt = Date()
         self.updatedAt = Date()
+    }
+    
+    static func == (lhs: APIEnvironment, rhs: APIEnvironment) -> Bool {
+        lhs.id == rhs.id
     }
 }

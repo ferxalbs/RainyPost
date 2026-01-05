@@ -12,17 +12,16 @@ struct WelcomeView: View {
     
     var body: some View {
         ZStack {
-            // Transparent background to allow blur through
             VisualEffectView(material: .hudWindow, blendingMode: .behindWindow)
                 .ignoresSafeArea()
             
-            VStack(spacing: 32) {
+            VStack(spacing: 48) {
                 Spacer()
                 
                 // App Icon and Title
-                VStack(spacing: 16) {
+                VStack(spacing: 24) {
                     Image(systemName: "cloud.rain.fill")
-                        .font(.system(size: 64, weight: .light))
+                        .font(.system(size: 80, weight: .light))
                         .foregroundStyle(
                             LinearGradient(
                                 colors: [.blue, .cyan],
@@ -30,75 +29,78 @@ struct WelcomeView: View {
                                 endPoint: .bottomTrailing
                             )
                         )
-                        .shadow(color: .blue.opacity(0.3), radius: 20, x: 0, y: 10)
+                        .shadow(color: .blue.opacity(0.3), radius: 30, x: 0, y: 15)
                     
-                    Text("RainyPost")
-                        .font(.system(size: 36, weight: .thin, design: .default))
-                        .foregroundColor(.primary)
-                    
-                    Text("Native macOS API Client")
-                        .font(.system(size: 14, weight: .regular))
-                        .foregroundColor(.secondary)
+                    VStack(spacing: 8) {
+                        Text("RainyPost")
+                            .font(.system(size: 42, weight: .thin, design: .default))
+                            .foregroundColor(.primary)
+                        
+                        Text("Native macOS API Client")
+                            .font(.system(size: 16, weight: .regular))
+                            .foregroundColor(.secondary)
+                    }
                 }
                 
                 // Action Buttons
-                VStack(spacing: 10) {
+                VStack(spacing: 14) {
                     Button(action: {
                         showingWorkspacePicker = true
                     }) {
-                        HStack(spacing: 8) {
+                        HStack(spacing: 10) {
                             Image(systemName: "plus.circle.fill")
-                                .font(.system(size: 14))
+                                .font(.system(size: 16))
                             Text("Create New Workspace")
-                                .font(.system(size: 13, weight: .medium))
+                                .font(.system(size: 15, weight: .medium))
                         }
                         .frame(maxWidth: .infinity)
-                        .padding(.vertical, 10)
+                        .padding(.vertical, 14)
                         .background(
                             LinearGradient(
                                 colors: [.blue, .blue.opacity(0.8)],
                                 startPoint: .top,
                                 endPoint: .bottom
                             ),
-                            in: RoundedRectangle(cornerRadius: 8)
+                            in: RoundedRectangle(cornerRadius: 10)
                         )
                         .foregroundColor(.white)
                     }
                     .buttonStyle(.plain)
-                    .shadow(color: .blue.opacity(0.3), radius: 8, x: 0, y: 4)
+                    .shadow(color: .blue.opacity(0.3), radius: 12, x: 0, y: 6)
                     
                     Button(action: {
                         showingWorkspacePicker = true
                     }) {
-                        HStack(spacing: 8) {
+                        HStack(spacing: 10) {
                             Image(systemName: "folder.fill")
-                                .font(.system(size: 14))
+                                .font(.system(size: 16))
                             Text("Open Existing Workspace")
-                                .font(.system(size: 13, weight: .medium))
+                                .font(.system(size: 15, weight: .medium))
                         }
                         .frame(maxWidth: .infinity)
-                        .padding(.vertical, 10)
-                        .background(.white.opacity(0.1), in: RoundedRectangle(cornerRadius: 8))
+                        .padding(.vertical, 14)
+                        .background(.white.opacity(0.1), in: RoundedRectangle(cornerRadius: 10))
                         .overlay(
-                            RoundedRectangle(cornerRadius: 8)
+                            RoundedRectangle(cornerRadius: 10)
                                 .strokeBorder(.white.opacity(0.2), lineWidth: 1)
                         )
                         .foregroundColor(.primary)
                     }
                     .buttonStyle(.plain)
                 }
-                .frame(maxWidth: 260)
+                .frame(maxWidth: 320)
                 
                 Spacer()
                 
                 // Footer
                 Text("Offline-first • File-based • Secure")
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundColor(.secondary.opacity(0.7))
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundColor(.secondary.opacity(0.6))
+                    .padding(.bottom, 20)
             }
-            .padding(48)
+            .padding(60)
         }
-        .frame(minWidth: 600, minHeight: 400)
+        .frame(minWidth: 1200, minHeight: 800)
     }
 }
 
@@ -127,4 +129,5 @@ struct VisualEffectView: NSViewRepresentable {
 
 #Preview {
     WelcomeView(showingWorkspacePicker: .constant(false))
+        .frame(width: 1200, height: 800)
 }

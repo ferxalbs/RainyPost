@@ -14,21 +14,21 @@ struct KeyValueEditor: View {
     let valuePlaceholder: String
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 12) {
             // Header
             HStack {
                 Text(title)
-                    .font(.system(size: 11, weight: .semibold))
+                    .font(.system(size: 13, weight: .semibold))
                     .foregroundColor(.secondary)
                 
                 Spacer()
                 
                 Button(action: addItem) {
-                    HStack(spacing: 3) {
+                    HStack(spacing: 5) {
                         Image(systemName: "plus")
-                            .font(.system(size: 9, weight: .semibold))
+                            .font(.system(size: 11, weight: .semibold))
                         Text("Add")
-                            .font(.system(size: 10, weight: .medium))
+                            .font(.system(size: 12, weight: .medium))
                     }
                     .foregroundColor(.blue)
                 }
@@ -39,7 +39,7 @@ struct KeyValueEditor: View {
             if items.isEmpty {
                 emptyState
             } else {
-                VStack(spacing: 4) {
+                VStack(spacing: 8) {
                     ForEach($items) { $item in
                         KeyValueRow(
                             item: $item,
@@ -54,20 +54,20 @@ struct KeyValueEditor: View {
     }
     
     private var emptyState: some View {
-        VStack(spacing: 6) {
+        VStack(spacing: 10) {
             Text("No \(title.lowercased())")
-                .font(.system(size: 12))
-                .foregroundColor(.secondary.opacity(0.6))
+                .font(.system(size: 14))
+                .foregroundColor(.secondary.opacity(0.5))
             
             Button(action: addItem) {
                 Text("Add \(keyPlaceholder)")
-                    .font(.system(size: 11, weight: .medium))
+                    .font(.system(size: 13, weight: .medium))
                     .foregroundColor(.blue)
             }
             .buttonStyle(.plain)
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 20)
+        .padding(.vertical, 32)
     }
     
     private func addItem() {
@@ -87,42 +87,42 @@ struct KeyValueRow: View {
     @State private var isHovered = false
     
     var body: some View {
-        HStack(spacing: 6) {
+        HStack(spacing: 10) {
             // Enable Toggle
             Button(action: { item.isEnabled.toggle() }) {
                 Image(systemName: item.isEnabled ? "checkmark.circle.fill" : "circle")
-                    .font(.system(size: 12))
-                    .foregroundColor(item.isEnabled ? .blue : .secondary.opacity(0.4))
+                    .font(.system(size: 16))
+                    .foregroundColor(item.isEnabled ? .blue : .secondary.opacity(0.3))
             }
             .buttonStyle(.plain)
             
             // Key Field
             TextField(keyPlaceholder, text: $item.key)
                 .textFieldStyle(.plain)
-                .font(.system(size: 12, design: .monospaced))
-                .padding(.horizontal, 8)
-                .padding(.vertical, 5)
-                .background(.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 4))
-                .frame(maxWidth: 180)
+                .font(.system(size: 14, design: .monospaced))
+                .padding(.horizontal, 12)
+                .padding(.vertical, 9)
+                .background(.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 6))
+                .frame(maxWidth: 220)
             
             // Equals Sign
             Text("=")
-                .font(.system(size: 11, design: .monospaced))
-                .foregroundColor(.secondary.opacity(0.5))
+                .font(.system(size: 13, design: .monospaced))
+                .foregroundColor(.secondary.opacity(0.4))
             
             // Value Field
             TextField(valuePlaceholder, text: $item.value)
                 .textFieldStyle(.plain)
-                .font(.system(size: 12, design: .monospaced))
-                .padding(.horizontal, 8)
-                .padding(.vertical, 5)
-                .background(.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 4))
+                .font(.system(size: 14, design: .monospaced))
+                .padding(.horizontal, 12)
+                .padding(.vertical, 9)
+                .background(.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 6))
             
             // Delete Button
             Button(action: onDelete) {
                 Image(systemName: "xmark")
-                    .font(.system(size: 9, weight: .semibold))
-                    .foregroundColor(.secondary.opacity(isHovered ? 0.8 : 0.4))
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundColor(.secondary.opacity(isHovered ? 0.8 : 0.3))
             }
             .buttonStyle(.plain)
         }
@@ -142,5 +142,5 @@ struct KeyValueRow: View {
         valuePlaceholder: "Value"
     )
     .padding()
-    .frame(width: 500)
+    .frame(width: 600)
 }

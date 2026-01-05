@@ -9,13 +9,12 @@ import SwiftUI
 
 struct WorkspaceView: View {
     @EnvironmentObject private var appState: AppState
-    @State private var sidebarWidth: CGFloat = 260
     
     var body: some View {
         HSplitView {
             // Sidebar
             WorkspaceSidebarView()
-                .frame(minWidth: 220, idealWidth: 260, maxWidth: 320)
+                .frame(minWidth: 260, idealWidth: 300, maxWidth: 380)
             
             // Main Content
             ZStack {
@@ -32,7 +31,7 @@ struct WorkspaceView: View {
             ToolbarItemGroup(placement: .navigation) {
                 Button(action: {}) {
                     Image(systemName: "sidebar.left")
-                        .font(.system(size: 13))
+                        .font(.system(size: 14))
                 }
                 .help("Toggle Sidebar")
             }
@@ -50,36 +49,37 @@ struct WorkspaceView: View {
                     }
                 }) {
                     Image(systemName: "plus")
-                        .font(.system(size: 13))
+                        .font(.system(size: 14))
                 }
                 .help("New Request (⌘N)")
                 .keyboardShortcut("n", modifiers: .command)
                 
                 Button(action: {}) {
                     Image(systemName: "magnifyingglass")
-                        .font(.system(size: 13))
+                        .font(.system(size: 14))
                 }
                 .help("Search (⌘K)")
                 .keyboardShortcut("k", modifiers: .command)
             }
         }
+        .frame(minWidth: 1200, minHeight: 800)
     }
 }
 
 struct EmptyStateView: View {
     var body: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: 16) {
             Image(systemName: "arrow.left.circle")
-                .font(.system(size: 36, weight: .thin))
-                .foregroundColor(.secondary.opacity(0.5))
+                .font(.system(size: 48, weight: .thin))
+                .foregroundColor(.secondary.opacity(0.4))
             
             Text("Select a Request")
-                .font(.system(size: 14, weight: .medium))
+                .font(.system(size: 18, weight: .medium))
                 .foregroundColor(.secondary)
             
             Text("Choose from the sidebar or create a new one")
-                .font(.system(size: 12))
-                .foregroundColor(.secondary.opacity(0.7))
+                .font(.system(size: 14))
+                .foregroundColor(.secondary.opacity(0.6))
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -88,4 +88,5 @@ struct EmptyStateView: View {
 #Preview {
     WorkspaceView()
         .environmentObject(AppState())
+        .frame(width: 1200, height: 800)
 }

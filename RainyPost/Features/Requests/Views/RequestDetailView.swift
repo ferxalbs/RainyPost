@@ -20,19 +20,25 @@ struct RequestDetailView: View {
             // Request Builder
             VStack(spacing: 0) {
                 requestHeaderView
-                Divider().opacity(0.5)
+                Divider().opacity(0.3)
                 requestBuilderView
             }
-            .frame(minHeight: 280)
+            .frame(minHeight: 320)
             
             // Response Viewer
             ResponseViewerView(viewModel: viewModel)
-                .frame(minHeight: 200)
+                .frame(minHeight: 280)
+        }
+        .onAppear {
+            viewModel.activeEnvironment = appState.activeEnvironment
+        }
+        .onChange(of: appState.activeEnvironment) { _, newValue in
+            viewModel.activeEnvironment = newValue
         }
     }
     
     private var requestHeaderView: some View {
-        HStack(spacing: 10) {
+        HStack(spacing: 14) {
             // Method Picker
             Menu {
                 ForEach(HTTPMethod.allCases, id: \.self) { method in
@@ -46,18 +52,18 @@ struct RequestDetailView: View {
                     }
                 }
             } label: {
-                HStack(spacing: 4) {
+                HStack(spacing: 6) {
                     Text(viewModel.method.rawValue)
-                        .font(.system(size: 12, weight: .bold, design: .monospaced))
+                        .font(.system(size: 14, weight: .bold, design: .monospaced))
                     Image(systemName: "chevron.down")
-                        .font(.system(size: 8, weight: .semibold))
+                        .font(.system(size: 9, weight: .semibold))
                 }
                 .foregroundColor(methodColor)
-                .padding(.horizontal, 10)
-                .padding(.vertical, 6)
-                .background(.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 6))
+                .padding(.horizontal, 14)
+                .padding(.vertical, 10)
+                .background(.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 8))
                 .overlay(
-                    RoundedRectangle(cornerRadius: 6)
+                    RoundedRectangle(cornerRadius: 8)
                         .strokeBorder(methodColor.opacity(0.3), lineWidth: 1)
                 )
             }
@@ -67,46 +73,46 @@ struct RequestDetailView: View {
             // URL Input
             TextField("https://api.example.com/endpoint", text: $viewModel.url)
                 .textFieldStyle(.plain)
-                .font(.system(size: 13, design: .monospaced))
-                .padding(.horizontal, 10)
-                .padding(.vertical, 7)
-                .background(.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 6))
+                .font(.system(size: 14, design: .monospaced))
+                .padding(.horizontal, 14)
+                .padding(.vertical, 11)
+                .background(.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 8))
                 .overlay(
-                    RoundedRectangle(cornerRadius: 6)
+                    RoundedRectangle(cornerRadius: 8)
                         .strokeBorder(.white.opacity(0.1), lineWidth: 1)
                 )
             
             // Send Button
             Button(action: { Task { await viewModel.sendRequest() } }) {
-                HStack(spacing: 5) {
+                HStack(spacing: 8) {
                     if viewModel.isLoading {
                         ProgressView()
-                            .scaleEffect(0.6)
-                            .frame(width: 12, height: 12)
+                            .scaleEffect(0.7)
+                            .frame(width: 14, height: 14)
                     } else {
                         Image(systemName: "paperplane.fill")
-                            .font(.system(size: 11))
+                            .font(.system(size: 13))
                     }
                     Text("Send")
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(.system(size: 14, weight: .semibold))
                 }
                 .foregroundColor(.white)
-                .padding(.horizontal, 14)
-                .padding(.vertical, 7)
+                .padding(.horizontal, 20)
+                .padding(.vertical, 10)
                 .background(
                     LinearGradient(
                         colors: [.blue, .blue.opacity(0.8)],
                         startPoint: .top,
                         endPoint: .bottom
                     ),
-                    in: RoundedRectangle(cornerRadius: 6)
+                    in: RoundedRectangle(cornerRadius: 8)
                 )
             }
             .buttonStyle(.plain)
             .disabled(viewModel.isLoading || viewModel.url.isEmpty)
             .keyboardShortcut(.return, modifiers: .command)
         }
-        .padding(12)
+        .padding(18)
     }
     
     private var requestBuilderView: some View {
@@ -114,7 +120,7 @@ struct RequestDetailView: View {
             // Tab Bar
             RequestTabBar(selectedTab: $viewModel.selectedTab)
             
-            Divider().opacity(0.3)
+            Divider().opacity(0.2)
             
             // Tab Content
             TabContentView(viewModel: viewModel)
@@ -139,7 +145,7 @@ struct RequestTabBar: View {
     @Binding var selectedTab: RequestTab
     
     var body: some View {
-        HStack(spacing: 0) {
+        HStack(spacing: 4) {
             ForEach(RequestTab.allCases, id: \.self) { tab in
                 TabButton(tab: tab, isSelected: selectedTab == tab) {
                     selectedTab = tab
@@ -147,8 +153,8 @@ struct RequestTabBar: View {
             }
             Spacer()
         }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 6)
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
     }
 }
 
@@ -160,17 +166,17 @@ struct TabButton: View {
     
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 5) {
+            HStack(spacing: 7) {
                 Image(systemName: tab.systemImage)
-                    .font(.system(size: 10))
+                    .font(.system(size: 12))
                 Text(tab.rawValue)
-                    .font(.system(size: 11, weight: .medium))
+                    .font(.system(size: 13, weight: .medium))
             }
             .foregroundColor(isSelected ? .primary : .secondary)
-            .padding(.horizontal, 12)
-            .padding(.vertical, 5)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 8)
             .background(
-                RoundedRectangle(cornerRadius: 5)
+                RoundedRectangle(cornerRadius: 6)
                     .fill(isSelected ? Color.white.opacity(0.1) : (isHovered ? Color.white.opacity(0.05) : Color.clear))
             )
         }
@@ -224,12 +230,12 @@ struct TabContentView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .padding(12)
+        .padding(18)
     }
 }
 
 #Preview {
     RequestDetailView(request: Request(name: "Test", method: .GET, url: "https://api.example.com"))
         .environmentObject(AppState())
-        .frame(width: 800, height: 600)
+        .frame(width: 900, height: 700)
 }

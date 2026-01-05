@@ -37,7 +37,11 @@ class RequestViewModel: ObservableObject {
     // Response
     @Published var response: HTTPResponse?
     
+    // Environment reference for interpolation
+    var activeEnvironment: APIEnvironment?
+    
     private let httpEngine = HTTPEngine()
+    private let interpolator = VariableInterpolator.shared
     private let originalRequest: Request
     
     init(request: Request) {
@@ -57,9 +61,8 @@ class RequestViewModel: ObservableObject {
             switch auth {
             case .none:
                 self.authType = .none
-            case .bearer(let tokenRef):
+            case .bearer:
                 self.authType = .bearer
-                // Load from keychain if needed
             case .basic(let username, _):
                 self.authType = .basic
                 self.authUsername = username
@@ -100,70 +103,130 @@ class RequestViewModel: ObservableObject {
         defer { isLoading = false }
         
         do {
-            let request = buildURLRequest()
+            let request = try buildURLRequest()
             response = try await httpEngine.execute(request)
         } catch {
             self.error = error.localizedDescription
         }
     }
     
-    private func buildURLRequest() -> URLRequest {
-        var urlString = url
+    private func buildURLRequest() throws -> URLRequest {
+        // Interpolate URL
+        let interpolatedURL = try interpolator.interpolate(
+            url,
+            environment: activeEnvironment,
+            requestVariables: originalRequest.variables
+        )
+        
+        var urlString = interpolatedURL
         
         // Add query parameters
         let enabledParams = queryParams.filter { $0.isEnabled && !$0.key.isEmpty }
         if !enabledParams.isEmpty {
-            var components = URLComponents(string: url) ?? URLComponents()
-            components.queryItems = enabledParams.map { URLQueryItem(name: $0.key, value: $0.value) }
-            urlString = components.url?.absoluteString ?? url
+            var components = URLComponents(string: interpolatedURL) ?? URLComponents()
+            components.queryItems = try enabledParams.map { param in
+                let interpolatedKey = try interpolator.interpolate(param.key, environment: activeEnvironment)
+                let interpolatedValue = try interpolator.interpolate(param.value, environment: activeEnvironment)
+                return URLQueryItem(name: interpolatedKey, value: interpolatedValue)
+            }
+            urlString = components.url?.absoluteString ?? interpolatedURL
         }
         
-        var request = URLRequest(url: URL(string: urlString) ?? URL(string: "https://invalid")!)
+        guard let requestURL = URL(string: urlString) else {
+            throw HTTPEngineError.invalidURL
+        }
+        
+        var request = URLRequest(url: requestURL)
         request.httpMethod = method.rawValue
         
-        // Add headers
+        // Add headers with interpolation
         for header in headers where header.isEnabled && !header.key.isEmpty {
-            request.setValue(header.value, forHTTPHeaderField: header.key)
+            let interpolatedKey = try interpolator.interpolate(header.key, environment: activeEnvironment)
+            let interpolatedValue = try interpolator.interpolate(header.value, environment: activeEnvironment)
+            request.setValue(interpolatedValue, forHTTPHeaderField: interpolatedKey)
         }
         
-        // Add auth
+        // Add auth with interpolation
         switch authType {
         case .none:
             break
         case .bearer:
             if !authToken.isEmpty {
-                request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
+                let interpolatedToken = try interpolator.interpolate(authToken, environment: activeEnvironment)
+                request.setValue("Bearer \(interpolatedToken)", forHTTPHeaderField: "Authorization")
             }
         case .basic:
-            let credentials = "\(authUsername):\(authPassword)"
+            let interpolatedUsername = try interpolator.interpolate(authUsername, environment: activeEnvironment)
+            let interpolatedPassword = try interpolator.interpolate(authPassword, environment: activeEnvironment)
+            let credentials = "\(interpolatedUsername):\(interpolatedPassword)"
             if let data = credentials.data(using: .utf8) {
                 let base64 = data.base64EncodedString()
                 request.setValue("Basic \(base64)", forHTTPHeaderField: "Authorization")
             }
         case .apiKey:
+            let interpolatedValue = try interpolator.interpolate(apiKeyValue, environment: activeEnvironment)
             if apiKeyLocation == .header {
-                request.setValue(apiKeyValue, forHTTPHeaderField: apiKeyName)
+                request.setValue(interpolatedValue, forHTTPHeaderField: apiKeyName)
             }
         }
         
-        // Add body
+        // Add body with interpolation
         switch bodyType {
         case .none:
             break
         case .raw:
-            request.httpBody = rawBody.data(using: .utf8)
+            let interpolatedBody = try interpolator.interpolate(rawBody, environment: activeEnvironment)
+            request.httpBody = interpolatedBody.data(using: .utf8)
             request.setValue(rawContentType.rawValue, forHTTPHeaderField: "Content-Type")
         case .formUrlEncoded:
             let enabledParams = formParams.filter { $0.isEnabled && !$0.key.isEmpty }
-            let bodyString = enabledParams.map { "\($0.key)=\($0.value.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? $0.value)" }.joined(separator: "&")
-            request.httpBody = bodyString.data(using: .utf8)
+            let bodyParts = try enabledParams.map { param -> String in
+                let interpolatedKey = try interpolator.interpolate(param.key, environment: activeEnvironment)
+                let interpolatedValue = try interpolator.interpolate(param.value, environment: activeEnvironment)
+                return "\(interpolatedKey)=\(interpolatedValue.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? interpolatedValue)"
+            }
+            request.httpBody = bodyParts.joined(separator: "&").data(using: .utf8)
             request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
         case .multipart:
-            // TODO: Implement multipart
             break
         }
         
         return request
+    }
+    
+    /// Returns a preview of the interpolated URL
+    func getInterpolatedURLPreview() -> String {
+        do {
+            return try interpolator.interpolate(url, environment: activeEnvironment)
+        } catch {
+            return url
+        }
+    }
+    
+    /// Returns unresolved variables in the current request
+    func getUnresolvedVariables() -> [String] {
+        var allVariables = Set<String>()
+        
+        if let env = activeEnvironment {
+            for variable in env.variables where variable.isEnabled {
+                allVariables.insert(variable.key)
+            }
+        }
+        
+        var unresolved: [String] = []
+        unresolved.append(contentsOf: interpolator.validateVariables(in: url, availableVariables: allVariables))
+        
+        for param in queryParams where param.isEnabled {
+            unresolved.append(contentsOf: interpolator.validateVariables(in: param.key, availableVariables: allVariables))
+            unresolved.append(contentsOf: interpolator.validateVariables(in: param.value, availableVariables: allVariables))
+        }
+        
+        for header in headers where header.isEnabled {
+            unresolved.append(contentsOf: interpolator.validateVariables(in: header.key, availableVariables: allVariables))
+            unresolved.append(contentsOf: interpolator.validateVariables(in: header.value, availableVariables: allVariables))
+        }
+        
+        return Array(Set(unresolved))
     }
 }
 
