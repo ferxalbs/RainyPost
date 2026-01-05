@@ -9,6 +9,7 @@ import Foundation
 import Compression
 
 /// Exports workspace as ZIP archive (excluding secrets)
+@MainActor
 struct WorkspaceExporter {
     
     struct ExportOptions {

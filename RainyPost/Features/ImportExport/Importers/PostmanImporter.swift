@@ -106,14 +106,7 @@ struct PostmanImporter {
     private func convertRequest(_ name: String, _ postman: PostmanRequest, collectionId: UUID) throws -> Request {
         let method = HTTPMethod(rawValue: postman.method.uppercased()) ?? .GET
         
-        let url: String
-        if let urlObj = postman.url.value as? PostmanURL {
-            url = urlObj.raw ?? ""
-        } else if let urlString = postman.url.value as? String {
-            url = urlString
-        } else {
-            url = ""
-        }
+        let url: String = postman.url.extractURL()
         
         // Convert headers
         let headers: [Header] = (postman.header ?? []).map { header in
@@ -155,8 +148,7 @@ struct PostmanImporter {
         switch postman.mode {
         case "raw":
             let contentType: RawContentType
-            if let options = postman.options, let rawOptions = options["raw"] as? [String: Any] {
-                let language = rawOptions["language"] as? String ?? "json"
+            if let language = postman.rawLanguage {
                 switch language {
                 case "json": contentType = .json
                 case "xml": contentType = .xml
@@ -190,18 +182,18 @@ struct PostmanImporter {
         switch postman.type {
         case "bearer":
             let token = postman.bearer?.first { $0.key == "token" }?.value ?? ""
-            return .bearer(token: SecretRef(keychainId: UUID().uuidString), tokenValue: token)
+            return .bearer(token: SecretRef(), tokenValue: token)
             
         case "basic":
             let username = postman.basic?.first { $0.key == "username" }?.value ?? ""
             let password = postman.basic?.first { $0.key == "password" }?.value ?? ""
-            return .basic(username: username, password: SecretRef(keychainId: UUID().uuidString), passwordValue: password)
+            return .basic(username: username, password: SecretRef(), passwordValue: password)
             
         case "apikey":
             let key = postman.apikey?.first { $0.key == "key" }?.value ?? "X-API-Key"
             let value = postman.apikey?.first { $0.key == "value" }?.value ?? ""
             let inHeader = postman.apikey?.first { $0.key == "in" }?.value != "query"
-            return .apiKey(key: key, value: SecretRef(keychainId: UUID().uuidString), location: inHeader ? .header : .query, keyValue: value)
+            return .apiKey(key: key, value: SecretRef(), location: inHeader ? .header : .query, keyValue: value)
             
         default:
             return .none
@@ -231,16 +223,60 @@ struct PostmanItem: Codable {
 
 struct PostmanRequest: Codable {
     let method: String
-    let url: AnyCodable
+    let url: PostmanURLWrapper
     let header: [PostmanHeader]?
     let body: PostmanBody?
     let auth: PostmanAuth?
 }
 
-struct PostmanURL: Codable {
+// Wrapper to handle both string and object URL formats
+struct PostmanURLWrapper: Codable {
     let raw: String?
     let host: [String]?
     let path: [String]?
+    private let stringValue: String?
+    
+    init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        
+        // Try to decode as string first
+        if let string = try? container.decode(String.self) {
+            self.stringValue = string
+            self.raw = nil
+            self.host = nil
+            self.path = nil
+        } else {
+            // Try to decode as object
+            self.stringValue = nil
+            let objectContainer = try decoder.container(keyedBy: CodingKeys.self)
+            self.raw = try objectContainer.decodeIfPresent(String.self, forKey: .raw)
+            self.host = try objectContainer.decodeIfPresent([String].self, forKey: .host)
+            self.path = try objectContainer.decodeIfPresent([String].self, forKey: .path)
+        }
+    }
+    
+    func encode(to encoder: Encoder) throws {
+        if let stringValue = stringValue {
+            var container = encoder.singleValueContainer()
+            try container.encode(stringValue)
+        } else {
+            var container = encoder.container(keyedBy: CodingKeys.self)
+            try container.encodeIfPresent(raw, forKey: .raw)
+            try container.encodeIfPresent(host, forKey: .host)
+            try container.encodeIfPresent(path, forKey: .path)
+        }
+    }
+    
+    func extractURL() -> String {
+        if let stringValue = stringValue {
+            return stringValue
+        }
+        return raw ?? ""
+    }
+    
+    private enum CodingKeys: String, CodingKey {
+        case raw, host, path
+    }
 }
 
 struct PostmanHeader: Codable {
@@ -254,7 +290,7 @@ struct PostmanBody: Codable {
     let raw: String?
     let urlencoded: [PostmanFormParam]?
     let formdata: [PostmanFormParam]?
-    let options: [String: Any]?
+    let rawLanguage: String?
     
     enum CodingKeys: String, CodingKey {
         case mode, raw, urlencoded, formdata, options
@@ -266,7 +302,14 @@ struct PostmanBody: Codable {
         raw = try container.decodeIfPresent(String.self, forKey: .raw)
         urlencoded = try container.decodeIfPresent([PostmanFormParam].self, forKey: .urlencoded)
         formdata = try container.decodeIfPresent([PostmanFormParam].self, forKey: .formdata)
-        options = nil
+        
+        // Extract raw language from options
+        if let options = try? container.decodeIfPresent([String: RawOptions].self, forKey: .options),
+           let rawOptions = options["raw"] {
+            rawLanguage = rawOptions.language
+        } else {
+            rawLanguage = nil
+        }
     }
     
     func encode(to encoder: Encoder) throws {
@@ -276,6 +319,10 @@ struct PostmanBody: Codable {
         try container.encodeIfPresent(urlencoded, forKey: .urlencoded)
         try container.encodeIfPresent(formdata, forKey: .formdata)
     }
+}
+
+struct RawOptions: Codable {
+    let language: String?
 }
 
 struct PostmanFormParam: Codable {
@@ -310,31 +357,4 @@ struct PostmanEnvValue: Codable {
     let key: String
     let value: String?
     let enabled: Bool?
-}
-
-// Helper for dynamic JSON
-struct AnyCodable: Codable {
-    let value: Any
-    
-    init(_ value: Any) {
-        self.value = value
-    }
-    
-    init(from decoder: Decoder) throws {
-        let container = try decoder.singleValueContainer()
-        if let string = try? container.decode(String.self) {
-            value = string
-        } else if let urlObj = try? container.decode(PostmanURL.self) {
-            value = urlObj
-        } else {
-            value = ""
-        }
-    }
-    
-    func encode(to encoder: Encoder) throws {
-        var container = encoder.singleValueContainer()
-        if let string = value as? String {
-            try container.encode(string)
-        }
-    }
 }

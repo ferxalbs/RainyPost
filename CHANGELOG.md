@@ -1,4 +1,4 @@
-# CHANGELOG
+# Changelog
 
 ## v1.0.5
 
@@ -9,6 +9,7 @@
 - Improved form layout with consistent spacing and native macOS styling
 - Hidden title bar for cleaner window appearance
 - Added default environment creation when creating new workspaces
+- NSOpenPanel now uses beginSheetModal for better SwiftUI compatibility
 
 ### Fixes
 - Fixed WorkspaceSidebarView missing closing brace causing private functions to be inside body
@@ -16,6 +17,10 @@
 - Fixed workspace creation permission errors with proper sandbox entitlements
 - Fixed security-scoped resource access for user-selected folders
 - Added proper file access entitlements (read-write, bookmarks, network)
+- Fixed NSOpenPanel XPC connection interrupted error by using sheet modal presentation
+- Fixed PostmanImporter AnyCodable casting issues with new PostmanURLWrapper type
+- Fixed SecretRef immutable property Codable warning
+- Fixed PostmanBody options parsing for raw language detection
 
 ### Patches
 - Removed decorative background elements from Welcome screen
@@ -23,3 +28,4 @@
 - Improved error handling in WorkspaceManager with specific error types
 - Added filesystem-safe name sanitization for workspace folders
 - Added cleanup of partial workspace creation on failure
+- Refactored PostmanImporter to use proper Codable types instead of Any casting

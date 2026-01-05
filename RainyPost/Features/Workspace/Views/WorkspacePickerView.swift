@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import AppKit
 
 struct WorkspacePickerView: View {
     @EnvironmentObject private var appState: AppState
@@ -182,40 +183,74 @@ struct WorkspacePickerView: View {
     }
     
     private func selectFolderForCreate() {
-        let panel = NSOpenPanel()
-        panel.canChooseFiles = false
-        panel.canChooseDirectories = true
-        panel.canCreateDirectories = true
-        panel.allowsMultipleSelection = false
-        panel.message = "Choose where to create the workspace folder"
-        panel.prompt = "Select"
-        panel.title = "Select Location"
-        
-        if panel.runModal() == .OK, let url = panel.url {
-            selectedURL = url
-            errorText = nil
+        // Dispatch to ensure we're on main thread and outside of any transaction
+        DispatchQueue.main.async {
+            let panel = NSOpenPanel()
+            panel.canChooseFiles = false
+            panel.canChooseDirectories = true
+            panel.canCreateDirectories = true
+            panel.allowsMultipleSelection = false
+            panel.message = "Choose where to create the workspace folder"
+            panel.prompt = "Select"
+            panel.title = "Select Location"
+            
+            // Use beginSheetModal for better compatibility with SwiftUI
+            if let window = NSApp.keyWindow {
+                panel.beginSheetModal(for: window) { response in
+                    if response == .OK, let url = panel.url {
+                        self.selectedURL = url
+                        self.errorText = nil
+                    }
+                }
+            } else {
+                // Fallback to modal
+                if panel.runModal() == .OK, let url = panel.url {
+                    self.selectedURL = url
+                    self.errorText = nil
+                }
+            }
         }
     }
     
     private func selectExistingWorkspace() {
-        let panel = NSOpenPanel()
-        panel.canChooseFiles = false
-        panel.canChooseDirectories = true
-        panel.canCreateDirectories = false
-        panel.allowsMultipleSelection = false
-        panel.message = "Select a RainyPost workspace folder (contains workspace.json)"
-        panel.prompt = "Open"
-        panel.title = "Open Workspace"
-        
-        if panel.runModal() == .OK, let url = panel.url {
-            // Verify it's a valid workspace
-            let workspaceFile = url.appendingPathComponent("workspace.json")
-            if FileManager.default.fileExists(atPath: workspaceFile.path) {
-                selectedURL = url
-                errorText = nil
+        // Dispatch to ensure we're on main thread and outside of any transaction
+        DispatchQueue.main.async {
+            let panel = NSOpenPanel()
+            panel.canChooseFiles = false
+            panel.canChooseDirectories = true
+            panel.canCreateDirectories = false
+            panel.allowsMultipleSelection = false
+            panel.message = "Select a RainyPost workspace folder (contains workspace.json)"
+            panel.prompt = "Open"
+            panel.title = "Open Workspace"
+            
+            // Use beginSheetModal for better compatibility with SwiftUI
+            if let window = NSApp.keyWindow {
+                panel.beginSheetModal(for: window) { response in
+                    if response == .OK, let url = panel.url {
+                        // Verify it's a valid workspace
+                        let workspaceFile = url.appendingPathComponent("workspace.json")
+                        if FileManager.default.fileExists(atPath: workspaceFile.path) {
+                            self.selectedURL = url
+                            self.errorText = nil
+                        } else {
+                            self.errorText = "Not a valid workspace folder (missing workspace.json)"
+                            self.selectedURL = nil
+                        }
+                    }
+                }
             } else {
-                errorText = "Not a valid workspace folder (missing workspace.json)"
-                selectedURL = nil
+                // Fallback to modal
+                if panel.runModal() == .OK, let url = panel.url {
+                    let workspaceFile = url.appendingPathComponent("workspace.json")
+                    if FileManager.default.fileExists(atPath: workspaceFile.path) {
+                        self.selectedURL = url
+                        self.errorText = nil
+                    } else {
+                        self.errorText = "Not a valid workspace folder (missing workspace.json)"
+                        self.selectedURL = nil
+                    }
+                }
             }
         }
     }
