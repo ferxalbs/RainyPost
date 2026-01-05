@@ -15,12 +15,12 @@ struct Variable: Identifiable, Codable {
     var secretRef: SecretRef?
     var isEnabled: Bool = true
     
-    init(key: String, value: String, isSecret: Bool = false, secretRef: SecretRef? = nil) {
+    init(key: String, value: String, isSecret: Bool = false, secretRef: SecretRef? = nil, isEnabled: Bool = true) {
         self.id = UUID()
         self.key = key
         self.value = value
         self.isSecret = isSecret
         self.secretRef = secretRef
-        self.isEnabled = true
+        self.isEnabled = isEnabled
     }
 }

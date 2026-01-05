@@ -31,8 +31,11 @@ class AppState: ObservableObject {
             let workspace = Workspace(name: name)
             try await workspaceManager.createWorkspace(workspace, at: url)
             
+            // The actual workspace folder is url/name
+            let workspaceFolder = url.appendingPathComponent(name)
+            
             self.currentWorkspace = workspace
-            self.workspaceURL = url
+            self.workspaceURL = workspaceFolder
             self.collections = []
             self.requests = []
             self.environments = []
@@ -41,6 +44,7 @@ class AppState: ObservableObject {
             
         } catch {
             self.errorMessage = "Failed to create workspace: \(error.localizedDescription)"
+            print("Workspace creation error: \(error)")
         }
     }
     

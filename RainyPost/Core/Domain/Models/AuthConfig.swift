@@ -9,10 +9,10 @@ import Foundation
 
 enum AuthConfig: Codable {
     case none
-    case bearer(token: SecretRef)
-    case basic(username: String, password: SecretRef)
-    case apiKey(key: String, value: SecretRef, location: APIKeyLocation)
-    case manualOAuth(token: SecretRef)
+    case bearer(token: SecretRef, tokenValue: String = "")
+    case basic(username: String, password: SecretRef, passwordValue: String = "")
+    case apiKey(key: String, value: SecretRef, location: APIKeyLocation, keyValue: String = "")
+    case manualOAuth(token: SecretRef, tokenValue: String = "")
 }
 
 enum APIKeyLocation: String, Codable {

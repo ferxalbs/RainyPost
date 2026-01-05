@@ -11,11 +11,11 @@ struct BodyEditorView: View {
     @ObservedObject var viewModel: RequestViewModel
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 18) {
+        VStack(alignment: .leading, spacing: 16) {
             // Body Type Picker
-            VStack(alignment: .leading, spacing: 10) {
+            VStack(alignment: .leading, spacing: 6) {
                 Text("Body Type")
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.system(size: 11, weight: .semibold))
                     .foregroundColor(.secondary)
                 
                 Picker("", selection: $viewModel.bodyType) {
@@ -24,7 +24,7 @@ struct BodyEditorView: View {
                     }
                 }
                 .pickerStyle(.segmented)
-                .frame(maxWidth: 420)
+                .frame(maxWidth: 350)
             }
             
             // Body Content based on type
@@ -42,24 +42,24 @@ struct BodyEditorView: View {
     }
     
     private var noBodyView: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: 10) {
             Image(systemName: "doc")
-                .font(.system(size: 32))
-                .foregroundColor(.secondary.opacity(0.3))
+                .font(.system(size: 28))
+                .foregroundColor(.secondary.opacity(0.4))
             
             Text("No request body")
-                .font(.system(size: 14))
-                .foregroundColor(.secondary.opacity(0.5))
+                .font(.system(size: 12))
+                .foregroundColor(.secondary)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .frame(maxWidth: .infinity, minHeight: 100)
     }
     
     private var rawBodyView: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 10) {
             // Content Type Picker
             HStack {
                 Text("Content Type")
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.system(size: 11, weight: .semibold))
                     .foregroundColor(.secondary)
                 
                 Picker("", selection: $viewModel.rawContentType) {
@@ -72,16 +72,10 @@ struct BodyEditorView: View {
                 
                 Spacer()
                 
-                Button(action: formatJSON) {
-                    HStack(spacing: 6) {
-                        Image(systemName: "text.alignleft")
-                            .font(.system(size: 12))
-                        Text("Format")
-                            .font(.system(size: 12, weight: .medium))
-                    }
-                    .foregroundColor(.blue)
+                Button("Format JSON") {
+                    formatJSON()
                 }
-                .buttonStyle(.plain)
+                .font(.system(size: 11))
                 .disabled(viewModel.rawContentType != .json)
             }
             
@@ -100,20 +94,20 @@ struct BodyEditorView: View {
     }
     
     private var multipartBodyView: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: 10) {
             Image(systemName: "doc.badge.plus")
-                .font(.system(size: 32))
-                .foregroundColor(.secondary.opacity(0.3))
+                .font(.system(size: 28))
+                .foregroundColor(.secondary.opacity(0.4))
             
             Text("Multipart form data")
-                .font(.system(size: 14))
-                .foregroundColor(.secondary.opacity(0.5))
+                .font(.system(size: 12))
+                .foregroundColor(.secondary)
             
             Text("Coming soon")
-                .font(.system(size: 12))
-                .foregroundColor(.secondary.opacity(0.3))
+                .font(.system(size: 10))
+                .foregroundColor(.secondary.opacity(0.6))
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .frame(maxWidth: .infinity, minHeight: 100)
     }
     
     private func formatJSON() {
@@ -133,20 +127,20 @@ struct CodeEditor: View {
     
     var body: some View {
         TextEditor(text: $text)
-            .font(.system(size: 13, design: .monospaced))
-            .scrollContentBackground(.hidden)
-            .padding(12)
-            .background(.white.opacity(0.04), in: RoundedRectangle(cornerRadius: 8))
+            .font(.system(size: 12, design: .monospaced))
+            .padding(8)
+            .background(Color(nsColor: .textBackgroundColor))
+            .cornerRadius(6)
             .overlay(
-                RoundedRectangle(cornerRadius: 8)
-                    .strokeBorder(.white.opacity(0.1), lineWidth: 1)
+                RoundedRectangle(cornerRadius: 6)
+                    .stroke(Color(nsColor: .separatorColor), lineWidth: 0.5)
             )
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .frame(minHeight: 120)
     }
 }
 
 #Preview {
     BodyEditorView(viewModel: RequestViewModel(request: Request(name: "Test", method: .POST, url: "")))
         .padding()
-        .frame(width: 600, height: 500)
+        .frame(width: 600, height: 400)
 }

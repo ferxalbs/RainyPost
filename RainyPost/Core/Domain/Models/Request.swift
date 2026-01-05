@@ -22,15 +22,24 @@ struct Request: Identifiable, Codable {
     let createdAt: Date
     var updatedAt: Date
     
-    init(name: String, method: HTTPMethod = .GET, url: String = "", collectionId: UUID? = nil) {
+    init(
+        name: String,
+        method: HTTPMethod = .GET,
+        url: String = "",
+        headers: [Header] = [],
+        queryParams: [QueryParam] = [],
+        body: RequestBody? = nil,
+        auth: AuthConfig? = nil,
+        collectionId: UUID? = nil
+    ) {
         self.id = UUID()
         self.name = name
         self.method = method
         self.url = url
-        self.headers = []
-        self.queryParams = []
-        self.body = nil
-        self.auth = nil
+        self.headers = headers
+        self.queryParams = queryParams
+        self.body = body
+        self.auth = auth
         self.variables = []
         self.collectionId = collectionId
         self.folderId = nil

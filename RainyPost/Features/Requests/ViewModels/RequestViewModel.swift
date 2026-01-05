@@ -63,17 +63,21 @@ class RequestViewModel: ObservableObject {
             switch auth {
             case .none:
                 self.authType = .none
-            case .bearer:
+            case .bearer(_, let tokenValue):
                 self.authType = .bearer
-            case .basic(let username, _):
+                self.authToken = tokenValue
+            case .basic(let username, _, let passwordValue):
                 self.authType = .basic
                 self.authUsername = username
-            case .apiKey(let key, _, let location):
+                self.authPassword = passwordValue
+            case .apiKey(let key, _, let location, let keyValue):
                 self.authType = .apiKey
                 self.apiKeyName = key
                 self.apiKeyLocation = location
-            case .manualOAuth:
+                self.apiKeyValue = keyValue
+            case .manualOAuth(_, let tokenValue):
                 self.authType = .bearer
+                self.authToken = tokenValue
             }
         }
         

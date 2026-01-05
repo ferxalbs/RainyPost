@@ -21,7 +21,6 @@ struct EnvironmentPickerView: View {
                 }) {
                     HStack {
                         Text(environment.name)
-                        
                         if environment.isActive {
                             Spacer()
                             Image(systemName: "checkmark")
@@ -38,25 +37,17 @@ struct EnvironmentPickerView: View {
                 showingManager = true
             }
         } label: {
-            HStack(spacing: 7) {
+            HStack(spacing: 5) {
                 Circle()
                     .fill(appState.activeEnvironment != nil ? Color.green : Color.secondary.opacity(0.3))
-                    .frame(width: 8, height: 8)
+                    .frame(width: 6, height: 6)
                 
                 Text(appState.activeEnvironment?.name ?? "No Environment")
-                    .font(.system(size: 13, weight: .medium))
+                    .font(.system(size: 11))
                 
                 Image(systemName: "chevron.down")
-                    .font(.system(size: 9, weight: .semibold))
+                    .font(.system(size: 8, weight: .semibold))
             }
-            .foregroundColor(.primary)
-            .padding(.horizontal, 14)
-            .padding(.vertical, 8)
-            .background(.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 8))
-            .overlay(
-                RoundedRectangle(cornerRadius: 8)
-                    .strokeBorder(.white.opacity(0.1), lineWidth: 1)
-            )
         }
         .menuStyle(.borderlessButton)
         .sheet(isPresented: $showingManager) {

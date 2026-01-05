@@ -14,133 +14,66 @@ struct KeyValueEditor: View {
     let valuePlaceholder: String
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            // Header
+        VStack(alignment: .leading, spacing: 8) {
             HStack {
                 Text(title)
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.system(size: 11, weight: .semibold))
                     .foregroundColor(.secondary)
-                
                 Spacer()
-                
-                Button(action: addItem) {
-                    HStack(spacing: 5) {
-                        Image(systemName: "plus")
-                            .font(.system(size: 11, weight: .semibold))
-                        Text("Add")
-                            .font(.system(size: 12, weight: .medium))
-                    }
-                    .foregroundColor(.blue)
+                Button(action: { items.append(KeyValueItem()) }) {
+                    Label("Add", systemImage: "plus")
+                        .font(.system(size: 10))
                 }
                 .buttonStyle(.plain)
+                .foregroundColor(.blue)
             }
             
-            // Items List
             if items.isEmpty {
-                emptyState
+                Text("No \(title.lowercased())")
+                    .font(.system(size: 11))
+                    .foregroundColor(.secondary)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 20)
             } else {
-                VStack(spacing: 8) {
-                    ForEach($items) { $item in
-                        KeyValueRow(
-                            item: $item,
-                            keyPlaceholder: keyPlaceholder,
-                            valuePlaceholder: valuePlaceholder,
-                            onDelete: { deleteItem(item) }
-                        )
+                ForEach($items) { $item in
+                    HStack(spacing: 6) {
+                        Toggle("", isOn: $item.isEnabled)
+                            .labelsHidden()
+                            .scaleEffect(0.8)
+                        
+                        TextField(keyPlaceholder, text: $item.key)
+                            .textFieldStyle(.roundedBorder)
+                            .font(.system(size: 11, design: .monospaced))
+                            .frame(maxWidth: 150)
+                        
+                        Text("=")
+                            .foregroundColor(.secondary)
+                        
+                        TextField(valuePlaceholder, text: $item.value)
+                            .textFieldStyle(.roundedBorder)
+                            .font(.system(size: 11, design: .monospaced))
+                        
+                        Button(action: { items.removeAll { $0.id == item.id } }) {
+                            Image(systemName: "xmark")
+                                .font(.system(size: 9))
+                                .foregroundColor(.secondary)
+                        }
+                        .buttonStyle(.plain)
                     }
                 }
             }
         }
-    }
-    
-    private var emptyState: some View {
-        VStack(spacing: 10) {
-            Text("No \(title.lowercased())")
-                .font(.system(size: 14))
-                .foregroundColor(.secondary.opacity(0.5))
-            
-            Button(action: addItem) {
-                Text("Add \(keyPlaceholder)")
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundColor(.blue)
-            }
-            .buttonStyle(.plain)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 32)
-    }
-    
-    private func addItem() {
-        items.append(KeyValueItem())
-    }
-    
-    private func deleteItem(_ item: KeyValueItem) {
-        items.removeAll { $0.id == item.id }
-    }
-}
-
-struct KeyValueRow: View {
-    @Binding var item: KeyValueItem
-    let keyPlaceholder: String
-    let valuePlaceholder: String
-    let onDelete: () -> Void
-    @State private var isHovered = false
-    
-    var body: some View {
-        HStack(spacing: 10) {
-            // Enable Toggle
-            Button(action: { item.isEnabled.toggle() }) {
-                Image(systemName: item.isEnabled ? "checkmark.circle.fill" : "circle")
-                    .font(.system(size: 16))
-                    .foregroundColor(item.isEnabled ? .blue : .secondary.opacity(0.3))
-            }
-            .buttonStyle(.plain)
-            
-            // Key Field
-            TextField(keyPlaceholder, text: $item.key)
-                .textFieldStyle(.plain)
-                .font(.system(size: 14, design: .monospaced))
-                .padding(.horizontal, 12)
-                .padding(.vertical, 9)
-                .background(.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 6))
-                .frame(maxWidth: 220)
-            
-            // Equals Sign
-            Text("=")
-                .font(.system(size: 13, design: .monospaced))
-                .foregroundColor(.secondary.opacity(0.4))
-            
-            // Value Field
-            TextField(valuePlaceholder, text: $item.value)
-                .textFieldStyle(.plain)
-                .font(.system(size: 14, design: .monospaced))
-                .padding(.horizontal, 12)
-                .padding(.vertical, 9)
-                .background(.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 6))
-            
-            // Delete Button
-            Button(action: onDelete) {
-                Image(systemName: "xmark")
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundColor(.secondary.opacity(isHovered ? 0.8 : 0.3))
-            }
-            .buttonStyle(.plain)
-        }
-        .padding(.vertical, 2)
-        .onHover { hovering in isHovered = hovering }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 
 #Preview {
     KeyValueEditor(
         title: "Query Parameters",
-        items: .constant([
-            KeyValueItem(key: "page", value: "1"),
-            KeyValueItem(key: "limit", value: "10")
-        ]),
-        keyPlaceholder: "Parameter",
+        items: .constant([KeyValueItem(key: "page", value: "1")]),
+        keyPlaceholder: "Key",
         valuePlaceholder: "Value"
     )
     .padding()
-    .frame(width: 600)
+    .frame(width: 500)
 }

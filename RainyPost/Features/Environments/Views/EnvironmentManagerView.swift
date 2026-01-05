@@ -20,31 +20,27 @@ struct EnvironmentManagerView: View {
             // Header
             HStack {
                 Text("Manage Environments")
-                    .font(.system(size: 18, weight: .semibold))
-                
+                    .font(.system(size: 14, weight: .semibold))
                 Spacer()
-                
                 Button(action: { dismiss() }) {
                     Image(systemName: "xmark.circle.fill")
-                        .font(.system(size: 22))
-                        .foregroundColor(.secondary.opacity(0.6))
+                        .font(.system(size: 16))
+                        .foregroundColor(.secondary)
                 }
                 .buttonStyle(.plain)
             }
-            .padding(.horizontal, 28)
-            .padding(.vertical, 20)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
             
-            Divider().opacity(0.3)
+            Divider()
             
             // Content
             HStack(spacing: 0) {
-                // Environment List
                 environmentListView
-                    .frame(width: 240)
+                    .frame(width: 200)
                 
-                Divider().opacity(0.3)
+                Divider()
                 
-                // Environment Detail
                 if let environment = selectedEnvironment {
                     environmentDetailView(environment)
                 } else {
@@ -52,37 +48,24 @@ struct EnvironmentManagerView: View {
                 }
             }
             
-            Divider().opacity(0.3)
+            Divider()
             
             // Footer
             HStack {
                 Button(action: createEnvironment) {
-                    HStack(spacing: 6) {
-                        Image(systemName: "plus")
-                            .font(.system(size: 12, weight: .semibold))
-                        Text("New Environment")
-                            .font(.system(size: 13, weight: .medium))
-                    }
-                    .foregroundColor(.blue)
+                    Label("New Environment", systemImage: "plus")
+                        .font(.system(size: 11))
                 }
-                .buttonStyle(.plain)
                 
                 Spacer()
                 
-                Button("Done") {
-                    dismiss()
-                }
-                .buttonStyle(.plain)
-                .font(.system(size: 14, weight: .medium))
-                .foregroundColor(.blue)
+                Button("Done") { dismiss() }
+                    .keyboardShortcut(.defaultAction)
             }
-            .padding(.horizontal, 28)
-            .padding(.vertical, 18)
+            .padding(12)
         }
-        .frame(width: 720, height: 520)
-        .background(
-            VisualEffectView(material: .popover, blendingMode: .behindWindow)
-        )
+        .frame(width: 560, height: 400)
+        .background(Color(nsColor: .windowBackgroundColor))
         .sheet(isPresented: $showingEditor) {
             if let env = editingEnvironment {
                 EnvironmentEditorView(environment: env)
@@ -96,83 +79,86 @@ struct EnvironmentManagerView: View {
     }
     
     private var environmentListView: some View {
-        ScrollView {
-            LazyVStack(spacing: 4) {
-                ForEach(appState.environments) { environment in
-                    EnvironmentListRow(
-                        environment: environment,
-                        isSelected: selectedEnvironment?.id == environment.id,
-                        isActive: environment.isActive
-                    )
-                    .onTapGesture {
-                        selectedEnvironment = environment
-                    }
-                }
+        List(selection: Binding(
+            get: { selectedEnvironment?.id },
+            set: { id in
+                selectedEnvironment = appState.environments.first { $0.id == id }
             }
-            .padding(12)
+        )) {
+            ForEach(appState.environments) { environment in
+                HStack(spacing: 8) {
+                    Circle()
+                        .fill(environment.isActive ? Color.green : Color.secondary.opacity(0.3))
+                        .frame(width: 6, height: 6)
+                    
+                    Text(environment.name)
+                        .font(.system(size: 11))
+                        .lineLimit(1)
+                    
+                    Spacer()
+                    
+                    Text("\(environment.variables.count)")
+                        .font(.system(size: 10))
+                        .foregroundColor(.secondary)
+                }
+                .tag(environment.id)
+            }
         }
+        .listStyle(.sidebar)
     }
     
     private func environmentDetailView(_ environment: APIEnvironment) -> some View {
         VStack(alignment: .leading, spacing: 0) {
-            // Environment Header
             HStack {
-                VStack(alignment: .leading, spacing: 4) {
-                    HStack(spacing: 10) {
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack(spacing: 8) {
                         Text(environment.name)
-                            .font(.system(size: 16, weight: .semibold))
+                            .font(.system(size: 13, weight: .semibold))
                         
                         if environment.isActive {
                             Text("Active")
-                                .font(.system(size: 10, weight: .semibold))
+                                .font(.system(size: 9, weight: .medium))
                                 .foregroundColor(.green)
-                                .padding(.horizontal, 8)
-                                .padding(.vertical, 3)
-                                .background(.green.opacity(0.15), in: RoundedRectangle(cornerRadius: 4))
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 2)
+                                .background(Color.green.opacity(0.15))
+                                .cornerRadius(3)
                         }
                     }
                     
                     Text("\(environment.variables.count) variables")
-                        .font(.system(size: 12))
+                        .font(.system(size: 10))
                         .foregroundColor(.secondary)
                 }
                 
                 Spacer()
                 
-                HStack(spacing: 12) {
+                HStack(spacing: 8) {
                     if !environment.isActive {
                         Button("Set Active") {
-                            Task {
-                                await appState.setActiveEnvironment(environment)
-                            }
+                            Task { await appState.setActiveEnvironment(environment) }
                         }
-                        .buttonStyle(.plain)
-                        .font(.system(size: 12, weight: .medium))
-                        .foregroundColor(.blue)
+                        .font(.system(size: 10))
                     }
                     
                     Button(action: { editEnvironment(environment) }) {
                         Image(systemName: "pencil")
-                            .font(.system(size: 13))
-                            .foregroundColor(.secondary)
+                            .font(.system(size: 11))
                     }
-                    .buttonStyle(.plain)
                 }
             }
-            .padding(20)
+            .padding(12)
             
-            Divider().opacity(0.2)
+            Divider()
             
-            // Variables List
             if environment.variables.isEmpty {
-                VStack(spacing: 12) {
+                VStack(spacing: 8) {
                     Image(systemName: "list.bullet.rectangle")
-                        .font(.system(size: 28))
-                        .foregroundColor(.secondary.opacity(0.3))
-                    
+                        .font(.system(size: 24))
+                        .foregroundColor(.secondary.opacity(0.4))
                     Text("No variables")
-                        .font(.system(size: 14))
-                        .foregroundColor(.secondary.opacity(0.5))
+                        .font(.system(size: 11))
+                        .foregroundColor(.secondary)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
@@ -182,7 +168,7 @@ struct EnvironmentManagerView: View {
                             VariableDisplayRow(variable: variable)
                         }
                     }
-                    .padding(.vertical, 8)
+                    .padding(.vertical, 4)
                 }
             }
         }
@@ -190,14 +176,13 @@ struct EnvironmentManagerView: View {
     }
     
     private var emptyDetailView: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: 8) {
             Image(systemName: "globe")
-                .font(.system(size: 36))
-                .foregroundColor(.secondary.opacity(0.3))
-            
+                .font(.system(size: 28))
+                .foregroundColor(.secondary.opacity(0.4))
             Text("Select an environment")
-                .font(.system(size: 14))
-                .foregroundColor(.secondary.opacity(0.5))
+                .font(.system(size: 11))
+                .foregroundColor(.secondary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -213,77 +198,43 @@ struct EnvironmentManagerView: View {
     }
 }
 
-struct EnvironmentListRow: View {
-    let environment: APIEnvironment
-    let isSelected: Bool
-    let isActive: Bool
-    @State private var isHovered = false
-    
-    var body: some View {
-        HStack(spacing: 10) {
-            Circle()
-                .fill(isActive ? Color.green : Color.secondary.opacity(0.3))
-                .frame(width: 8, height: 8)
-            
-            Text(environment.name)
-                .font(.system(size: 14))
-                .fontWeight(isActive ? .medium : .regular)
-                .lineLimit(1)
-            
-            Spacer()
-            
-            Text("\(environment.variables.count)")
-                .font(.system(size: 11))
-                .foregroundColor(.secondary.opacity(0.5))
-        }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 10)
-        .background(
-            RoundedRectangle(cornerRadius: 6)
-                .fill(isSelected ? Color.blue.opacity(0.2) : (isHovered ? Color.white.opacity(0.05) : Color.clear))
-        )
-        .contentShape(Rectangle())
-        .onHover { hovering in isHovered = hovering }
-    }
-}
-
 struct VariableDisplayRow: View {
     let variable: Variable
     
     var body: some View {
         HStack {
-            HStack(spacing: 8) {
+            HStack(spacing: 6) {
                 if !variable.isEnabled {
                     Image(systemName: "circle")
-                        .font(.system(size: 10))
-                        .foregroundColor(.secondary.opacity(0.3))
+                        .font(.system(size: 8))
+                        .foregroundColor(.secondary.opacity(0.4))
                 }
                 
                 Text(variable.key)
-                    .font(.system(size: 13, weight: .medium, design: .monospaced))
-                    .foregroundColor(variable.isEnabled ? .blue : .secondary.opacity(0.5))
+                    .font(.system(size: 11, weight: .medium, design: .monospaced))
+                    .foregroundColor(variable.isEnabled ? .blue : .secondary)
             }
-            .frame(width: 160, alignment: .leading)
+            .frame(width: 120, alignment: .leading)
             
             if variable.isSecret {
-                HStack(spacing: 4) {
+                HStack(spacing: 3) {
                     Image(systemName: "lock.fill")
-                        .font(.system(size: 10))
+                        .font(.system(size: 9))
                     Text("••••••••")
                 }
-                .font(.system(size: 13, design: .monospaced))
-                .foregroundColor(.orange.opacity(0.7))
+                .font(.system(size: 11, design: .monospaced))
+                .foregroundColor(.orange.opacity(0.8))
             } else {
                 Text(variable.value)
-                    .font(.system(size: 13, design: .monospaced))
-                    .foregroundColor(variable.isEnabled ? .primary : .secondary.opacity(0.5))
+                    .font(.system(size: 11, design: .monospaced))
+                    .foregroundColor(variable.isEnabled ? .primary : .secondary)
                     .lineLimit(1)
             }
             
             Spacer()
         }
-        .padding(.horizontal, 20)
-        .padding(.vertical, 10)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 6)
         .opacity(variable.isEnabled ? 1 : 0.6)
     }
 }

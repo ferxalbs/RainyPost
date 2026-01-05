@@ -19,48 +19,43 @@ struct HistoryListView: View {
     
     var body: some View {
         VStack(spacing: 0) {
-            // Search Bar
             searchBar
+            Divider()
             
-            Divider().opacity(0.3)
-            
-            // History List
             if historyEntries.isEmpty {
                 emptyState
             } else {
                 historyList
             }
         }
-        .onAppear {
-            loadHistory()
-        }
+        .onAppear { loadHistory() }
     }
     
     private var searchBar: some View {
-        HStack(spacing: 10) {
-            HStack(spacing: 6) {
+        HStack(spacing: 8) {
+            HStack(spacing: 4) {
                 Image(systemName: "magnifyingglass")
-                    .font(.system(size: 11))
+                    .font(.system(size: 10))
                     .foregroundColor(.secondary)
                 
                 TextField("Search history...", text: $searchText)
                     .textFieldStyle(.plain)
-                    .font(.system(size: 12))
+                    .font(.system(size: 11))
                 
                 if !searchText.isEmpty {
                     Button(action: { searchText = "" }) {
                         Image(systemName: "xmark.circle.fill")
-                            .font(.system(size: 11))
+                            .font(.system(size: 10))
                             .foregroundColor(.secondary)
                     }
                     .buttonStyle(.plain)
                 }
             }
-            .padding(.horizontal, 8)
-            .padding(.vertical, 6)
-            .background(.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 6))
+            .padding(.horizontal, 6)
+            .padding(.vertical, 4)
+            .background(Color(nsColor: .textBackgroundColor))
+            .cornerRadius(4)
             
-            // Status Filter
             Menu {
                 Button("All") { statusFilter = nil }
                 Divider()
@@ -68,63 +63,60 @@ struct HistoryListView: View {
                     Button(filter.rawValue) { statusFilter = filter }
                 }
             } label: {
-                HStack(spacing: 4) {
+                HStack(spacing: 3) {
                     Text(statusFilter?.rawValue ?? "All")
-                        .font(.system(size: 11))
+                        .font(.system(size: 10))
                     Image(systemName: "chevron.down")
-                        .font(.system(size: 8))
+                        .font(.system(size: 7))
                 }
-                .foregroundColor(.secondary)
-                .padding(.horizontal, 8)
-                .padding(.vertical, 5)
-                .background(.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 5))
             }
             .menuStyle(.borderlessButton)
         }
-        .padding(12)
+        .padding(8)
         .onChange(of: searchText) { _, _ in loadHistory() }
         .onChange(of: statusFilter) { _, _ in loadHistory() }
     }
     
     private var emptyState: some View {
-        VStack(spacing: 10) {
+        VStack(spacing: 8) {
             Image(systemName: "clock.arrow.circlepath")
-                .font(.system(size: 28))
-                .foregroundColor(.secondary.opacity(0.3))
+                .font(.system(size: 24))
+                .foregroundColor(.secondary.opacity(0.4))
             
             Text("No history yet")
-                .font(.system(size: 13))
-                .foregroundColor(.secondary.opacity(0.5))
+                .font(.system(size: 11))
+                .foregroundColor(.secondary)
             
             Text("Requests you send will appear here")
-                .font(.system(size: 11))
-                .foregroundColor(.secondary.opacity(0.4))
+                .font(.system(size: 10))
+                .foregroundColor(.secondary.opacity(0.6))
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
     
     private var historyList: some View {
-        ScrollView {
-            LazyVStack(spacing: 2) {
-                ForEach(historyEntries) { entry in
-                    HistoryRowView(entry: entry, isSelected: selectedEntry?.id == entry.id)
-                        .onTapGesture {
-                            selectedEntry = entry
-                        }
-                        .contextMenu {
-                            Button("Copy URL") {
-                                NSPasteboard.general.clearContents()
-                                NSPasteboard.general.setString(entry.url, forType: .string)
-                            }
-                            Divider()
-                            Button("Delete", role: .destructive) {
-                                deleteEntry(entry)
-                            }
-                        }
-                }
+        List(selection: Binding(
+            get: { selectedEntry?.id },
+            set: { id in
+                selectedEntry = historyEntries.first { $0.id == id }
             }
-            .padding(8)
+        )) {
+            ForEach(historyEntries) { entry in
+                HistoryRowView(entry: entry)
+                    .tag(entry.id)
+                    .contextMenu {
+                        Button("Copy URL") {
+                            NSPasteboard.general.clearContents()
+                            NSPasteboard.general.setString(entry.url, forType: .string)
+                        }
+                        Divider()
+                        Button("Delete", role: .destructive) {
+                            deleteEntry(entry)
+                        }
+                    }
+            }
         }
+        .listStyle(.plain)
     }
     
     private func loadHistory() {
@@ -155,65 +147,52 @@ struct HistoryListView: View {
 
 struct HistoryRowView: View {
     let entry: HistoryEntry
-    let isSelected: Bool
-    @State private var isHovered = false
     
     var body: some View {
-        HStack(spacing: 10) {
-            // Method
+        HStack(spacing: 8) {
             Text(entry.method)
                 .font(.system(size: 9, weight: .bold, design: .monospaced))
                 .foregroundColor(methodColor)
-                .frame(width: 40, alignment: .leading)
+                .frame(width: 36, alignment: .leading)
             
-            // Status
             if let status = entry.statusCode {
                 Text("\(status)")
-                    .font(.system(size: 10, weight: .semibold, design: .monospaced))
+                    .font(.system(size: 9, weight: .semibold, design: .monospaced))
                     .foregroundColor(statusColor(status))
-                    .frame(width: 30)
+                    .frame(width: 28)
             } else {
                 Text("---")
-                    .font(.system(size: 10, design: .monospaced))
-                    .foregroundColor(.secondary.opacity(0.4))
-                    .frame(width: 30)
+                    .font(.system(size: 9, design: .monospaced))
+                    .foregroundColor(.secondary.opacity(0.5))
+                    .frame(width: 28)
             }
             
-            // Name & URL
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: 1) {
                 Text(entry.requestName)
-                    .font(.system(size: 12, weight: .medium))
+                    .font(.system(size: 11, weight: .medium))
                     .lineLimit(1)
                 
                 Text(entry.url)
-                    .font(.system(size: 10, design: .monospaced))
+                    .font(.system(size: 9, design: .monospaced))
                     .foregroundColor(.secondary)
                     .lineLimit(1)
             }
             
             Spacer()
             
-            // Duration & Time
-            VStack(alignment: .trailing, spacing: 2) {
+            VStack(alignment: .trailing, spacing: 1) {
                 if entry.duration > 0 {
                     Text(formatDuration(entry.duration))
-                        .font(.system(size: 10, design: .monospaced))
+                        .font(.system(size: 9, design: .monospaced))
                         .foregroundColor(.secondary)
                 }
                 
                 Text(formatTime(entry.timestamp))
-                    .font(.system(size: 10))
-                    .foregroundColor(.secondary.opacity(0.6))
+                    .font(.system(size: 9))
+                    .foregroundColor(.secondary.opacity(0.7))
             }
         }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 8)
-        .background(
-            RoundedRectangle(cornerRadius: 6)
-                .fill(isSelected ? Color.blue.opacity(0.2) : (isHovered ? Color.white.opacity(0.04) : Color.clear))
-        )
-        .contentShape(Rectangle())
-        .onHover { hovering in isHovered = hovering }
+        .padding(.vertical, 2)
     }
     
     private var methodColor: Color {

@@ -30,30 +30,14 @@ struct RainyPostApp: App {
         WindowGroup {
             MainWindowView()
                 .environmentObject(appState)
-                .background(WindowAccessor())
                 .frame(minWidth: 800, minHeight: 400)
         }
         .modelContainer(sharedModelContainer)
-        .windowStyle(.hiddenTitleBar)
-        .windowToolbarStyle(.unified(showsTitle: false))
+        .windowStyle(.automatic)
+        .windowToolbarStyle(.unified)
         .defaultSize(width: 1100, height: 700)
-    }
-}
-
-// Helper to make window transparent for blur effect
-struct WindowAccessor: NSViewRepresentable {
-    func makeNSView(context: Context) -> NSView {
-        let view = NSView()
-        DispatchQueue.main.async {
-            if let window = view.window {
-                window.isOpaque = false
-                window.backgroundColor = .clear
-                window.titlebarAppearsTransparent = true
-                window.styleMask.insert(.fullSizeContentView)
-            }
+        .commands {
+            AppCommands(appState: appState)
         }
-        return view
     }
-    
-    func updateNSView(_ nsView: NSView, context: Context) {}
 }

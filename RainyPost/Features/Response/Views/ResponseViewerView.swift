@@ -20,12 +20,9 @@ struct ResponseViewerView: View {
     
     var body: some View {
         VStack(spacing: 0) {
-            // Response Header
             responseHeader
+            Divider()
             
-            Divider().opacity(0.2)
-            
-            // Response Content
             if let response = viewModel.response {
                 responseContent(response)
             } else if viewModel.isLoading {
@@ -36,49 +33,47 @@ struct ResponseViewerView: View {
                 emptyView
             }
         }
-        .background(VisualEffectView(material: .contentBackground, blendingMode: .behindWindow))
+        .background(Color(nsColor: .controlBackgroundColor))
     }
     
     private var responseHeader: some View {
-        HStack(spacing: 16) {
+        HStack(spacing: 12) {
             Text("Response")
-                .font(.system(size: 14, weight: .semibold))
+                .font(.system(size: 12, weight: .semibold))
                 .foregroundColor(.secondary)
             
             if let response = viewModel.response {
-                // Status Badge
-                HStack(spacing: 6) {
+                HStack(spacing: 4) {
                     Circle()
                         .fill(statusColor(response.statusCode))
-                        .frame(width: 8, height: 8)
+                        .frame(width: 6, height: 6)
                     
                     Text("\(response.statusCode)")
-                        .font(.system(size: 13, weight: .bold, design: .monospaced))
+                        .font(.system(size: 11, weight: .bold, design: .monospaced))
                         .foregroundColor(statusColor(response.statusCode))
                     
                     Text(response.statusText)
-                        .font(.system(size: 13))
+                        .font(.system(size: 11))
                         .foregroundColor(.secondary)
                 }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 5)
-                .background(statusColor(response.statusCode).opacity(0.1), in: RoundedRectangle(cornerRadius: 6))
+                .padding(.horizontal, 8)
+                .padding(.vertical, 3)
+                .background(statusColor(response.statusCode).opacity(0.1))
+                .cornerRadius(4)
                 
-                // Timing
-                HStack(spacing: 5) {
+                HStack(spacing: 3) {
                     Image(systemName: "clock")
-                        .font(.system(size: 11))
+                        .font(.system(size: 9))
                     Text(response.formattedDuration)
-                        .font(.system(size: 12, design: .monospaced))
+                        .font(.system(size: 10, design: .monospaced))
                 }
                 .foregroundColor(.secondary)
                 
-                // Size
-                HStack(spacing: 5) {
+                HStack(spacing: 3) {
                     Image(systemName: "doc")
-                        .font(.system(size: 11))
+                        .font(.system(size: 9))
                     Text(response.formattedSize)
-                        .font(.system(size: 12, design: .monospaced))
+                        .font(.system(size: 10, design: .monospaced))
                 }
                 .foregroundColor(.secondary)
             }
@@ -86,18 +81,17 @@ struct ResponseViewerView: View {
             Spacer()
             
             if viewModel.response != nil {
-                // Tab Picker
                 Picker("", selection: $selectedTab) {
                     ForEach(ResponseTab.allCases, id: \.self) { tab in
                         Text(tab.rawValue).tag(tab)
                     }
                 }
                 .pickerStyle(.segmented)
-                .frame(width: 240)
+                .frame(width: 200)
             }
         }
-        .padding(.horizontal, 18)
-        .padding(.vertical, 12)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
     }
     
     @ViewBuilder
@@ -113,45 +107,42 @@ struct ResponseViewerView: View {
     }
     
     private var loadingView: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: 12) {
             ProgressView()
-                .scaleEffect(1.0)
-            
             Text("Sending request...")
-                .font(.system(size: 14))
+                .font(.system(size: 12))
                 .foregroundColor(.secondary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
     
     private func errorView(_ error: String) -> some View {
-        VStack(spacing: 16) {
+        VStack(spacing: 12) {
             Image(systemName: "exclamationmark.triangle")
-                .font(.system(size: 36))
+                .font(.system(size: 28))
                 .foregroundColor(.red.opacity(0.7))
             
             Text("Request Failed")
-                .font(.system(size: 16, weight: .medium))
-                .foregroundColor(.primary)
+                .font(.system(size: 13, weight: .medium))
             
             Text(error)
-                .font(.system(size: 13))
+                .font(.system(size: 11))
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)
-                .padding(.horizontal, 48)
+                .padding(.horizontal, 32)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
     
     private var emptyView: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: 10) {
             Image(systemName: "arrow.up.circle")
-                .font(.system(size: 36))
-                .foregroundColor(.secondary.opacity(0.3))
+                .font(.system(size: 28))
+                .foregroundColor(.secondary.opacity(0.4))
             
             Text("Send a request to see the response")
-                .font(.system(size: 14))
-                .foregroundColor(.secondary.opacity(0.5))
+                .font(.system(size: 12))
+                .foregroundColor(.secondary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -181,7 +172,6 @@ struct ResponseBodyView: View {
     
     var body: some View {
         VStack(spacing: 0) {
-            // View Mode Toggle
             HStack {
                 Picker("", selection: $viewMode) {
                     ForEach(BodyViewMode.allCases, id: \.self) { mode in
@@ -189,46 +179,29 @@ struct ResponseBodyView: View {
                     }
                 }
                 .pickerStyle(.segmented)
-                .frame(width: 180)
+                .frame(width: 160)
                 
                 Spacer()
                 
-                Button(action: copyToClipboard) {
-                    HStack(spacing: 5) {
-                        Image(systemName: "doc.on.doc")
-                            .font(.system(size: 11))
-                        Text("Copy")
-                            .font(.system(size: 11, weight: .medium))
-                    }
-                    .foregroundColor(.blue)
-                }
-                .buttonStyle(.plain)
+                Button("Copy") { copyToClipboard() }
+                    .font(.system(size: 10))
                 
-                Button(action: saveToFile) {
-                    HStack(spacing: 5) {
-                        Image(systemName: "square.and.arrow.down")
-                            .font(.system(size: 11))
-                        Text("Save")
-                            .font(.system(size: 11, weight: .medium))
-                    }
-                    .foregroundColor(.blue)
-                }
-                .buttonStyle(.plain)
+                Button("Save") { saveToFile() }
+                    .font(.system(size: 10))
             }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 8)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 6)
             
-            Divider().opacity(0.15)
+            Divider()
             
-            // Body Content
             switch viewMode {
             case .pretty:
                 ScrollView {
                     Text(response.prettyJSON ?? response.bodyString ?? "Unable to decode")
-                        .font(.system(size: 12, design: .monospaced))
+                        .font(.system(size: 11, design: .monospaced))
                         .textSelection(.enabled)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(14)
+                        .padding(12)
                 }
             case .tree:
                 if response.prettyJSON != nil {
@@ -236,19 +209,19 @@ struct ResponseBodyView: View {
                 } else {
                     ScrollView {
                         Text(response.bodyString ?? "Unable to decode")
-                            .font(.system(size: 12, design: .monospaced))
+                            .font(.system(size: 11, design: .monospaced))
                             .textSelection(.enabled)
                             .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(14)
+                            .padding(12)
                     }
                 }
             case .raw:
                 ScrollView {
                     Text(response.bodyString ?? "Unable to decode")
-                        .font(.system(size: 12, design: .monospaced))
+                        .font(.system(size: 11, design: .monospaced))
                         .textSelection(.enabled)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(14)
+                        .padding(12)
                 }
             }
         }
@@ -282,24 +255,23 @@ struct ResponseHeadersView: View {
                 ForEach(headers) { header in
                     HStack(alignment: .top) {
                         Text(header.key)
-                            .font(.system(size: 13, weight: .medium, design: .monospaced))
+                            .font(.system(size: 11, weight: .medium, design: .monospaced))
                             .foregroundColor(.blue)
-                            .frame(width: 200, alignment: .leading)
+                            .frame(width: 180, alignment: .leading)
                         
                         Text(header.value)
-                            .font(.system(size: 13, design: .monospaced))
-                            .foregroundColor(.primary)
+                            .font(.system(size: 11, design: .monospaced))
                             .textSelection(.enabled)
                         
                         Spacer()
                     }
-                    .padding(.horizontal, 18)
-                    .padding(.vertical, 10)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
                     
-                    Divider().opacity(0.1)
+                    Divider()
                 }
             }
-            .padding(.vertical, 10)
+            .padding(.vertical, 6)
         }
     }
 }
@@ -317,28 +289,29 @@ struct ResponseCookiesView: View {
     
     var body: some View {
         if cookies.isEmpty {
-            VStack(spacing: 12) {
+            VStack(spacing: 10) {
                 Image(systemName: "tray")
-                    .font(.system(size: 32))
-                    .foregroundColor(.secondary.opacity(0.3))
+                    .font(.system(size: 28))
+                    .foregroundColor(.secondary.opacity(0.4))
                 
                 Text("No cookies in response")
-                    .font(.system(size: 14))
-                    .foregroundColor(.secondary.opacity(0.5))
+                    .font(.system(size: 12))
+                    .foregroundColor(.secondary)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else {
             ScrollView {
-                LazyVStack(alignment: .leading, spacing: 12) {
+                LazyVStack(alignment: .leading, spacing: 8) {
                     ForEach(cookies, id: \.self) { cookie in
                         Text(cookie)
-                            .font(.system(size: 13, design: .monospaced))
+                            .font(.system(size: 11, design: .monospaced))
                             .textSelection(.enabled)
-                            .padding(12)
-                            .background(.white.opacity(0.04), in: RoundedRectangle(cornerRadius: 6))
+                            .padding(8)
+                            .background(Color(nsColor: .textBackgroundColor))
+                            .cornerRadius(4)
                     }
                 }
-                .padding(18)
+                .padding(12)
             }
         }
     }
