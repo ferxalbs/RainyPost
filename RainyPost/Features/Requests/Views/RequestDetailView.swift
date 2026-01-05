@@ -79,17 +79,14 @@ struct RequestDetailView: View {
         VStack(spacing: 0) {
             // Tab Bar
             HStack(spacing: 0) {
-                ForEach(RequestTab.allCases, id: \.self) { tab in
-                    Button(action: { viewModel.selectedTab = tab }) {
-                        Text(tab.rawValue)
-                            .font(.system(size: 11, weight: viewModel.selectedTab == tab ? .semibold : .regular))
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 6)
+                Picker("", selection: $viewModel.selectedTab) {
+                    ForEach(RequestTab.allCases, id: \.self) { tab in
+                        Text(tab.rawValue).tag(tab)
                     }
-                    .buttonStyle(.plain)
-                    .background(viewModel.selectedTab == tab ? Color.accentColor.opacity(0.1) : Color.clear)
-                    .cornerRadius(4)
                 }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+                .frame(maxWidth: 280)
                 Spacer()
             }
             .padding(.horizontal, 8)

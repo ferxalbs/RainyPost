@@ -182,11 +182,13 @@ struct ResponseBodyView: View {
                 
                 Spacer()
                 
-                Button("Copy") { copyToClipboard() }
-                    .font(.system(size: 10))
+                Button("Copy", systemImage: "doc.on.doc") { copyToClipboard() }
+                    .buttonStyle(.borderless)
+                    .controlSize(.small)
                 
-                Button("Save") { saveToFile() }
-                    .font(.system(size: 10))
+                Button("Save", systemImage: "square.and.arrow.down") { saveToFile() }
+                    .buttonStyle(.borderless)
+                    .controlSize(.small)
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 6)

@@ -20,12 +20,11 @@ struct KeyValueEditor: View {
                     .font(.system(size: 11, weight: .semibold))
                     .foregroundColor(.secondary)
                 Spacer()
-                Button(action: { items.append(KeyValueItem()) }) {
-                    Label("Add", systemImage: "plus")
-                        .font(.system(size: 10))
+                Button("Add", systemImage: "plus.circle") {
+                    items.append(KeyValueItem())
                 }
-                .buttonStyle(.plain)
-                .foregroundColor(.blue)
+                .buttonStyle(.borderless)
+                .controlSize(.small)
             }
             
             if items.isEmpty {
@@ -53,12 +52,13 @@ struct KeyValueEditor: View {
                             .textFieldStyle(.roundedBorder)
                             .font(.system(size: 11, design: .monospaced))
                         
-                        Button(action: { items.removeAll { $0.id == item.id } }) {
-                            Image(systemName: "xmark")
-                                .font(.system(size: 9))
-                                .foregroundColor(.secondary)
+                        Button(role: .destructive) {
+                            items.removeAll { $0.id == item.id }
+                        } label: {
+                            Image(systemName: "trash")
                         }
-                        .buttonStyle(.plain)
+                        .buttonStyle(.borderless)
+                        .controlSize(.small)
                     }
                 }
             }

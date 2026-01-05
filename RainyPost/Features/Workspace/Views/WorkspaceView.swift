@@ -24,13 +24,6 @@ struct WorkspaceView: View {
             }
         }
         .toolbar {
-            ToolbarItemGroup(placement: .navigation) {
-                Button(action: {}) {
-                    Image(systemName: "sidebar.left")
-                }
-                .help("Toggle Sidebar")
-            }
-            
             ToolbarItemGroup(placement: .principal) {
                 if appState.currentWorkspace != nil {
                     EnvironmentPickerView()
@@ -38,32 +31,26 @@ struct WorkspaceView: View {
             }
             
             ToolbarItemGroup(placement: .primaryAction) {
-                Menu {
-                    Button(action: { showingImport = true }) {
-                        Label("Import...", systemImage: "square.and.arrow.down")
-                    }
-                    Button(action: { showingExport = true }) {
-                        Label("Export...", systemImage: "square.and.arrow.up")
-                    }
-                    Divider()
-                    Button(action: copyCurl) {
-                        Label("Copy as cURL", systemImage: "doc.on.doc")
-                    }
-                    .disabled(appState.selectedRequest == nil)
-                } label: {
-                    Image(systemName: "ellipsis.circle")
-                }
-                .help("More Actions")
-                
-                Button(action: {
+                Button("New Request", systemImage: "plus") {
                     Task {
                         await appState.createRequest(name: "New Request")
                     }
-                }) {
-                    Image(systemName: "plus")
                 }
-                .help("New Request (⌘N)")
                 .keyboardShortcut("n", modifiers: .command)
+                
+                Menu {
+                    Button("Import...", systemImage: "square.and.arrow.down") {
+                        showingImport = true
+                    }
+                    Button("Export...", systemImage: "square.and.arrow.up") {
+                        showingExport = true
+                    }
+                    Divider()
+                    Button("Copy as cURL", systemImage: "doc.on.doc", action: copyCurl)
+                        .disabled(appState.selectedRequest == nil)
+                } label: {
+                    Label("More", systemImage: "ellipsis.circle")
+                }
             }
         }
         .frame(minWidth: 800, minHeight: 400)
