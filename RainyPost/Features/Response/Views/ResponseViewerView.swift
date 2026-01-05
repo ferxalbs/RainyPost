@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct ResponseViewerView: View {
     @ObservedObject var viewModel: RequestViewModel
@@ -174,6 +175,7 @@ struct ResponseBodyView: View {
     
     enum BodyViewMode: String, CaseIterable {
         case pretty = "Pretty"
+        case tree = "Tree"
         case raw = "Raw"
     }
     
@@ -187,49 +189,85 @@ struct ResponseBodyView: View {
                     }
                 }
                 .pickerStyle(.segmented)
-                .frame(width: 140)
+                .frame(width: 180)
                 
                 Spacer()
                 
                 Button(action: copyToClipboard) {
-                    HStack(spacing: 6) {
+                    HStack(spacing: 5) {
                         Image(systemName: "doc.on.doc")
-                            .font(.system(size: 12))
+                            .font(.system(size: 11))
                         Text("Copy")
-                            .font(.system(size: 12, weight: .medium))
+                            .font(.system(size: 11, weight: .medium))
+                    }
+                    .foregroundColor(.blue)
+                }
+                .buttonStyle(.plain)
+                
+                Button(action: saveToFile) {
+                    HStack(spacing: 5) {
+                        Image(systemName: "square.and.arrow.down")
+                            .font(.system(size: 11))
+                        Text("Save")
+                            .font(.system(size: 11, weight: .medium))
                     }
                     .foregroundColor(.blue)
                 }
                 .buttonStyle(.plain)
             }
-            .padding(.horizontal, 18)
-            .padding(.vertical, 10)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 8)
             
             Divider().opacity(0.15)
             
             // Body Content
-            ScrollView {
-                Text(displayText)
-                    .font(.system(size: 13, design: .monospaced))
-                    .textSelection(.enabled)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(18)
+            switch viewMode {
+            case .pretty:
+                ScrollView {
+                    Text(response.prettyJSON ?? response.bodyString ?? "Unable to decode")
+                        .font(.system(size: 12, design: .monospaced))
+                        .textSelection(.enabled)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(14)
+                }
+            case .tree:
+                if response.prettyJSON != nil {
+                    JSONTreeView(data: response.body)
+                } else {
+                    ScrollView {
+                        Text(response.bodyString ?? "Unable to decode")
+                            .font(.system(size: 12, design: .monospaced))
+                            .textSelection(.enabled)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(14)
+                    }
+                }
+            case .raw:
+                ScrollView {
+                    Text(response.bodyString ?? "Unable to decode")
+                        .font(.system(size: 12, design: .monospaced))
+                        .textSelection(.enabled)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(14)
+                }
             }
         }
     }
     
-    private var displayText: String {
-        switch viewMode {
-        case .pretty:
-            return response.prettyJSON ?? response.bodyString ?? "Unable to decode response"
-        case .raw:
-            return response.bodyString ?? "Unable to decode response"
-        }
+    private func copyToClipboard() {
+        let text = viewMode == .raw ? (response.bodyString ?? "") : (response.prettyJSON ?? response.bodyString ?? "")
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(text, forType: .string)
     }
     
-    private func copyToClipboard() {
-        NSPasteboard.general.clearContents()
-        NSPasteboard.general.setString(displayText, forType: .string)
+    private func saveToFile() {
+        let panel = NSSavePanel()
+        panel.allowedContentTypes = [.json, .plainText]
+        panel.nameFieldStringValue = "response.json"
+        
+        if panel.runModal() == .OK, let url = panel.url {
+            try? response.body.write(to: url)
+        }
     }
 }
 

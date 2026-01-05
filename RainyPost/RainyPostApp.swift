@@ -36,7 +36,7 @@ struct RainyPostApp: App {
         .modelContainer(sharedModelContainer)
         .windowStyle(.hiddenTitleBar)
         .windowToolbarStyle(.unified(showsTitle: false))
-        .defaultSize(width: 800, height: 400)
+        .defaultSize(width: 1100, height: 700)
     }
 }
 
@@ -50,8 +50,6 @@ struct WindowAccessor: NSViewRepresentable {
                 window.backgroundColor = .clear
                 window.titlebarAppearsTransparent = true
                 window.styleMask.insert(.fullSizeContentView)
-                window.setContentSize(NSSize(width: 1200, height: 800))
-                window.center()
             }
         }
         return view

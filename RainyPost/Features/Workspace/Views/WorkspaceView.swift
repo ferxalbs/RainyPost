@@ -62,7 +62,7 @@ struct WorkspaceView: View {
                 .keyboardShortcut("k", modifiers: .command)
             }
         }
-        .frame(minWidth: 1200, minHeight: 800)
+        .frame(minWidth: 800, minHeight: 400)
     }
 }
 

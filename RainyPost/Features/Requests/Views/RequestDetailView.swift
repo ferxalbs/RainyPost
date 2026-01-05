@@ -6,9 +6,11 @@
 //
 
 import SwiftUI
+import SwiftData
 
 struct RequestDetailView: View {
     @EnvironmentObject private var appState: AppState
+    @Environment(\.modelContext) private var modelContext
     @StateObject private var viewModel: RequestViewModel
     
     init(request: Request) {
@@ -23,14 +25,16 @@ struct RequestDetailView: View {
                 Divider().opacity(0.3)
                 requestBuilderView
             }
-            .frame(minHeight: 320)
+            .frame(minHeight: 280)
             
             // Response Viewer
             ResponseViewerView(viewModel: viewModel)
-                .frame(minHeight: 280)
+                .frame(minHeight: 220)
         }
         .onAppear {
             viewModel.activeEnvironment = appState.activeEnvironment
+            viewModel.workspaceId = appState.currentWorkspace?.id
+            viewModel.historyService = HistoryService(modelContext: modelContext)
         }
         .onChange(of: appState.activeEnvironment) { _, newValue in
             viewModel.activeEnvironment = newValue

@@ -20,33 +20,32 @@ struct WorkspacePickerView: View {
             // Header
             HStack {
                 Text(isCreatingNew ? "Create Workspace" : "Open Workspace")
-                    .font(.system(size: 18, weight: .semibold))
+                    .font(.system(size: 14, weight: .semibold))
                 
                 Spacer()
                 
                 Button(action: { dismiss() }) {
                     Image(systemName: "xmark.circle.fill")
-                        .font(.system(size: 22))
-                        .foregroundColor(.secondary.opacity(0.6))
+                        .font(.system(size: 18))
+                        .foregroundColor(.secondary.opacity(0.5))
                 }
                 .buttonStyle(.plain)
-                .keyboardShortcut(.cancelAction)
             }
-            .padding(.horizontal, 28)
-            .padding(.vertical, 20)
+            .padding(.horizontal, 20)
+            .padding(.vertical, 14)
             
             Divider().opacity(0.3)
             
             // Content
-            VStack(spacing: 28) {
+            VStack(spacing: 18) {
                 // Mode Picker
                 Picker("Mode", selection: $isCreatingNew) {
                     Text("Create New").tag(true)
                     Text("Open Existing").tag(false)
                 }
                 .pickerStyle(.segmented)
-                .frame(maxWidth: 280)
-                .padding(.top, 12)
+                .frame(maxWidth: 220)
+                .padding(.top, 6)
                 
                 if isCreatingNew {
                     createNewWorkspaceView
@@ -57,14 +56,13 @@ struct WorkspacePickerView: View {
                 Spacer()
                 
                 // Action Buttons
-                HStack(spacing: 16) {
+                HStack(spacing: 12) {
                     Button("Cancel") {
                         dismiss()
                     }
                     .buttonStyle(.plain)
-                    .font(.system(size: 14))
+                    .font(.system(size: 12))
                     .foregroundColor(.secondary)
-                    .keyboardShortcut(.cancelAction)
                     
                     Spacer()
                     
@@ -78,23 +76,22 @@ struct WorkspacePickerView: View {
                         }
                     }) {
                         Text(isCreatingNew ? "Create" : "Open")
-                            .font(.system(size: 14, weight: .semibold))
+                            .font(.system(size: 12, weight: .semibold))
                             .foregroundColor(.white)
-                            .padding(.horizontal, 28)
-                            .padding(.vertical, 10)
+                            .padding(.horizontal, 20)
+                            .padding(.vertical, 7)
                             .background(
-                                RoundedRectangle(cornerRadius: 8)
+                                RoundedRectangle(cornerRadius: 6)
                                     .fill(canProceed ? Color.blue : Color.blue.opacity(0.4))
                             )
                     }
                     .buttonStyle(.plain)
-                    .keyboardShortcut(.defaultAction)
                     .disabled(!canProceed)
                 }
             }
-            .padding(28)
+            .padding(20)
         }
-        .frame(width: 520, height: 360)
+        .frame(width: 400, height: 240)
         .background(
             VisualEffectView(material: .popover, blendingMode: .behindWindow)
         )
@@ -105,86 +102,86 @@ struct WorkspacePickerView: View {
     }
     
     private var createNewWorkspaceView: some View {
-        VStack(spacing: 20) {
-            VStack(alignment: .leading, spacing: 10) {
+        VStack(spacing: 14) {
+            VStack(alignment: .leading, spacing: 6) {
                 Text("Workspace Name")
-                    .font(.system(size: 13, weight: .medium))
+                    .font(.system(size: 11, weight: .medium))
                     .foregroundColor(.secondary)
                 
                 TextField("My API Project", text: $workspaceName)
                     .textFieldStyle(.plain)
-                    .font(.system(size: 15))
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 12)
-                    .background(.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 8))
+                    .font(.system(size: 13))
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 8)
+                    .background(.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 6))
                     .overlay(
-                        RoundedRectangle(cornerRadius: 8)
-                            .strokeBorder(.white.opacity(0.12), lineWidth: 1)
+                        RoundedRectangle(cornerRadius: 6)
+                            .strokeBorder(.white.opacity(0.1), lineWidth: 1)
                     )
             }
             
-            VStack(alignment: .leading, spacing: 10) {
+            VStack(alignment: .leading, spacing: 6) {
                 Text("Location")
-                    .font(.system(size: 13, weight: .medium))
+                    .font(.system(size: 11, weight: .medium))
                     .foregroundColor(.secondary)
                 
-                HStack(spacing: 12) {
+                HStack(spacing: 8) {
                     Text(selectedURL?.path ?? "Choose a folder...")
-                        .font(.system(size: 14))
-                        .foregroundColor(selectedURL == nil ? .secondary.opacity(0.6) : .primary)
+                        .font(.system(size: 12))
+                        .foregroundColor(selectedURL == nil ? .secondary.opacity(0.5) : .primary)
                         .lineLimit(1)
                         .truncationMode(.middle)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 12)
-                        .background(.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 8))
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 8)
+                        .background(.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 6))
                         .overlay(
-                            RoundedRectangle(cornerRadius: 8)
-                                .strokeBorder(.white.opacity(0.12), lineWidth: 1)
+                            RoundedRectangle(cornerRadius: 6)
+                                .strokeBorder(.white.opacity(0.1), lineWidth: 1)
                         )
                     
                     Button("Browse") {
                         showFolderPicker()
                     }
                     .buttonStyle(.plain)
-                    .font(.system(size: 13, weight: .medium))
-                    .padding(.horizontal, 18)
-                    .padding(.vertical, 10)
-                    .background(.white.opacity(0.1), in: RoundedRectangle(cornerRadius: 8))
+                    .font(.system(size: 11, weight: .medium))
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 7)
+                    .background(.white.opacity(0.1), in: RoundedRectangle(cornerRadius: 6))
                 }
             }
         }
     }
     
     private var openExistingWorkspaceView: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 6) {
             Text("Workspace Folder")
-                .font(.system(size: 13, weight: .medium))
+                .font(.system(size: 11, weight: .medium))
                 .foregroundColor(.secondary)
             
-            HStack(spacing: 12) {
+            HStack(spacing: 8) {
                 Text(selectedURL?.path ?? "Choose workspace folder...")
-                    .font(.system(size: 14))
-                    .foregroundColor(selectedURL == nil ? .secondary.opacity(0.6) : .primary)
+                    .font(.system(size: 12))
+                    .foregroundColor(selectedURL == nil ? .secondary.opacity(0.5) : .primary)
                     .lineLimit(1)
                     .truncationMode(.middle)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 12)
-                    .background(.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 8))
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 8)
+                    .background(.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 6))
                     .overlay(
-                        RoundedRectangle(cornerRadius: 8)
-                            .strokeBorder(.white.opacity(0.12), lineWidth: 1)
+                        RoundedRectangle(cornerRadius: 6)
+                            .strokeBorder(.white.opacity(0.1), lineWidth: 1)
                     )
                 
                 Button("Browse") {
                     showWorkspacePicker()
                 }
                 .buttonStyle(.plain)
-                .font(.system(size: 13, weight: .medium))
-                .padding(.horizontal, 18)
-                .padding(.vertical, 10)
-                .background(.white.opacity(0.1), in: RoundedRectangle(cornerRadius: 8))
+                .font(.system(size: 11, weight: .medium))
+                .padding(.horizontal, 12)
+                .padding(.vertical, 7)
+                .background(.white.opacity(0.1), in: RoundedRectangle(cornerRadius: 6))
             }
         }
     }
@@ -194,7 +191,7 @@ struct WorkspacePickerView: View {
         panel.canChooseFiles = false
         panel.canChooseDirectories = true
         panel.allowsMultipleSelection = false
-        panel.prompt = "Choose Location"
+        panel.prompt = "Choose"
         
         if panel.runModal() == .OK {
             selectedURL = panel.url
@@ -206,7 +203,7 @@ struct WorkspacePickerView: View {
         panel.canChooseFiles = false
         panel.canChooseDirectories = true
         panel.allowsMultipleSelection = false
-        panel.prompt = "Open Workspace"
+        panel.prompt = "Open"
         
         if panel.runModal() == .OK {
             selectedURL = panel.url

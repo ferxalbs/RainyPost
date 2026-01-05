@@ -100,7 +100,7 @@ struct WelcomeView: View {
             }
             .padding(60)
         }
-        .frame(minWidth: 1200, minHeight: 800)
+        .frame(minWidth: 800, minHeight: 400)
     }
 }
 

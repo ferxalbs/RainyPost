@@ -39,6 +39,8 @@ class RequestViewModel: ObservableObject {
     
     // Environment reference for interpolation
     var activeEnvironment: APIEnvironment?
+    var workspaceId: UUID?
+    var historyService: HistoryService?
     
     private let httpEngine = HTTPEngine()
     private let interpolator = VariableInterpolator.shared
@@ -105,8 +107,32 @@ class RequestViewModel: ObservableObject {
         do {
             let request = try buildURLRequest()
             response = try await httpEngine.execute(request)
+            
+            // Record to history
+            if let workspaceId = workspaceId, let historyService = historyService {
+                historyService.recordRequest(
+                    requestId: originalRequest.id,
+                    requestName: name,
+                    url: url,
+                    method: method.rawValue,
+                    workspaceId: workspaceId,
+                    response: response
+                )
+            }
         } catch {
             self.error = error.localizedDescription
+            
+            // Record failed request to history
+            if let workspaceId = workspaceId, let historyService = historyService {
+                historyService.recordRequest(
+                    requestId: originalRequest.id,
+                    requestName: name,
+                    url: url,
+                    method: method.rawValue,
+                    workspaceId: workspaceId,
+                    response: nil
+                )
+            }
         }
     }
     
