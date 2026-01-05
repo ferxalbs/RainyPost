@@ -31,6 +31,7 @@ struct RainyPostApp: App {
             MainWindowView()
                 .environmentObject(appState)
                 .frame(minWidth: 800, minHeight: 400)
+                .background(VisualEffectView(material: .sidebar, blendingMode: .behindWindow))
         }
         .modelContainer(sharedModelContainer)
         .windowStyle(.automatic)

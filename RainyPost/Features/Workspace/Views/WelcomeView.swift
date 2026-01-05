@@ -54,7 +54,6 @@ struct WelcomeView: View {
         }
         .padding(32)
         .frame(minWidth: 800, minHeight: 400)
-        .background(Color(nsColor: .windowBackgroundColor))
     }
 }
 

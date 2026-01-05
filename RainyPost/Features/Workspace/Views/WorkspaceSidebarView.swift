@@ -114,6 +114,7 @@ struct WorkspaceSidebarView: View {
             }
         }
         .listStyle(.sidebar)
+        .scrollContentBackground(.hidden)
         .onAppear { loadHistory() }
     }
     

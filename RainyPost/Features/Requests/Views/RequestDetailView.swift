@@ -102,6 +102,7 @@ struct RequestDetailView: View {
                 tabContent
                     .padding(12)
             }
+            .scrollContentBackground(.hidden)
         }
     }
     

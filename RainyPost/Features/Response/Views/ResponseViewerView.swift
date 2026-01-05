@@ -33,7 +33,6 @@ struct ResponseViewerView: View {
                 emptyView
             }
         }
-        .background(Color(nsColor: .controlBackgroundColor))
     }
     
     private var responseHeader: some View {
@@ -203,6 +202,7 @@ struct ResponseBodyView: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(12)
                 }
+                .scrollContentBackground(.hidden)
             case .tree:
                 if response.prettyJSON != nil {
                     JSONTreeView(data: response.body)
@@ -214,6 +214,7 @@ struct ResponseBodyView: View {
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .padding(12)
                     }
+                    .scrollContentBackground(.hidden)
                 }
             case .raw:
                 ScrollView {
@@ -223,6 +224,7 @@ struct ResponseBodyView: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(12)
                 }
+                .scrollContentBackground(.hidden)
             }
         }
     }
@@ -273,6 +275,7 @@ struct ResponseHeadersView: View {
             }
             .padding(.vertical, 6)
         }
+        .scrollContentBackground(.hidden)
     }
 }
 
@@ -313,6 +316,7 @@ struct ResponseCookiesView: View {
                 }
                 .padding(12)
             }
+            .scrollContentBackground(.hidden)
         }
     }
 }
