@@ -23,28 +23,47 @@ class WorkspaceManager {
     
     // MARK: - Workspace Operations
     
-    func createWorkspace(_ workspace: Workspace, at url: URL) async throws {
-        // Create workspace directory structure
-        let workspaceURL = url.appendingPathComponent(workspace.name)
-        try fileManager.createDirectory(at: workspaceURL, withIntermediateDirectories: true)
+    func createWorkspace(_ workspace: Workspace, at parentURL: URL) async throws {
+        // Create workspace directory with the workspace name
+        let workspaceURL = parentURL.appendingPathComponent(workspace.name)
+        
+        // Check if directory already exists
+        if fileManager.fileExists(atPath: workspaceURL.path) {
+            throw WorkspaceError.alreadyExists(workspace.name)
+        }
+        
+        // Create main workspace directory
+        try fileManager.createDirectory(at: workspaceURL, withIntermediateDirectories: true, attributes: nil)
         
         // Create subdirectories
         let collectionsURL = workspaceURL.appendingPathComponent("collections")
         let environmentsURL = workspaceURL.appendingPathComponent("environments")
-        let hiddenURL = workspaceURL.appendingPathComponent(".rainypost")
+        let rainypostURL = workspaceURL.appendingPathComponent(".rainypost")
         
-        try fileManager.createDirectory(at: collectionsURL, withIntermediateDirectories: true)
-        try fileManager.createDirectory(at: environmentsURL, withIntermediateDirectories: true)
-        try fileManager.createDirectory(at: hiddenURL, withIntermediateDirectories: true)
+        try fileManager.createDirectory(at: collectionsURL, withIntermediateDirectories: true, attributes: nil)
+        try fileManager.createDirectory(at: environmentsURL, withIntermediateDirectories: true, attributes: nil)
+        try fileManager.createDirectory(at: rainypostURL, withIntermediateDirectories: true, attributes: nil)
         
         // Save workspace.json
         let workspaceFileURL = workspaceURL.appendingPathComponent("workspace.json")
         let data = try jsonEncoder.encode(workspace)
-        try data.write(to: workspaceFileURL)
+        try data.write(to: workspaceFileURL, options: .atomic)
+        
+        // Create a default environment
+        var defaultEnv = APIEnvironment(name: "Default")
+        defaultEnv.isActive = true
+        let envFileURL = environmentsURL.appendingPathComponent("Default.env.json")
+        let envData = try jsonEncoder.encode(defaultEnv)
+        try envData.write(to: envFileURL)
     }
     
     func loadWorkspace(from url: URL) async throws -> Workspace {
         let workspaceFileURL = url.appendingPathComponent("workspace.json")
+        
+        guard fileManager.fileExists(atPath: workspaceFileURL.path) else {
+            throw WorkspaceError.notFound
+        }
+        
         let data = try Data(contentsOf: workspaceFileURL)
         return try jsonDecoder.decode(Workspace.self, from: data)
     }
@@ -55,11 +74,11 @@ class WorkspaceManager {
         let collectionsURL = workspaceURL.appendingPathComponent("collections")
         let collectionURL = collectionsURL.appendingPathComponent(collection.name)
         
-        try fileManager.createDirectory(at: collectionURL, withIntermediateDirectories: true)
+        try fileManager.createDirectory(at: collectionURL, withIntermediateDirectories: true, attributes: nil)
         
         let collectionFileURL = collectionURL.appendingPathComponent("collection.json")
         let data = try jsonEncoder.encode(collection)
-        try data.write(to: collectionFileURL)
+        try data.write(to: collectionFileURL, options: .atomic)
     }
     
     func loadCollections(from workspaceURL: URL) async throws -> [Collection] {
@@ -69,10 +88,14 @@ class WorkspaceManager {
             return []
         }
         
-        let contents = try fileManager.contentsOfDirectory(at: collectionsURL, includingPropertiesForKeys: nil)
+        let contents = try fileManager.contentsOfDirectory(at: collectionsURL, includingPropertiesForKeys: [.isDirectoryKey])
         var collections: [Collection] = []
         
         for collectionURL in contents {
+            var isDirectory: ObjCBool = false
+            guard fileManager.fileExists(atPath: collectionURL.path, isDirectory: &isDirectory),
+                  isDirectory.boolValue else { continue }
+            
             let collectionFileURL = collectionURL.appendingPathComponent("collection.json")
             
             if fileManager.fileExists(atPath: collectionFileURL.path) {
@@ -100,9 +123,13 @@ class WorkspaceManager {
             requestURL = collectionsURL
         }
         
-        let requestFileURL = requestURL.appendingPathComponent("\(request.name).request.json")
+        // Ensure directory exists
+        try fileManager.createDirectory(at: requestURL, withIntermediateDirectories: true, attributes: nil)
+        
+        let safeFileName = request.name.replacingOccurrences(of: "/", with: "-")
+        let requestFileURL = requestURL.appendingPathComponent("\(safeFileName).request.json")
         let data = try jsonEncoder.encode(request)
-        try data.write(to: requestFileURL)
+        try data.write(to: requestFileURL, options: .atomic)
     }
     
     func loadRequests(from workspaceURL: URL) async throws -> [Request] {
@@ -115,13 +142,19 @@ class WorkspaceManager {
         var requests: [Request] = []
         
         // Recursively search for .request.json files
-        let enumerator = fileManager.enumerator(at: collectionsURL, includingPropertiesForKeys: nil)
+        guard let enumerator = fileManager.enumerator(at: collectionsURL, includingPropertiesForKeys: [.isRegularFileKey]) else {
+            return []
+        }
         
-        while let fileURL = enumerator?.nextObject() as? URL {
+        while let fileURL = enumerator.nextObject() as? URL {
             if fileURL.pathExtension == "json" && fileURL.lastPathComponent.contains(".request.") {
-                let data = try Data(contentsOf: fileURL)
-                let request = try jsonDecoder.decode(Request.self, from: data)
-                requests.append(request)
+                do {
+                    let data = try Data(contentsOf: fileURL)
+                    let request = try jsonDecoder.decode(Request.self, from: data)
+                    requests.append(request)
+                } catch {
+                    print("Failed to load request from \(fileURL): \(error)")
+                }
             }
         }
         
@@ -132,10 +165,15 @@ class WorkspaceManager {
     
     func saveEnvironment(_ environment: APIEnvironment, to workspaceURL: URL) async throws {
         let environmentsURL = workspaceURL.appendingPathComponent("environments")
-        let environmentFileURL = environmentsURL.appendingPathComponent("\(environment.name).env.json")
+        
+        // Ensure directory exists
+        try fileManager.createDirectory(at: environmentsURL, withIntermediateDirectories: true, attributes: nil)
+        
+        let safeFileName = environment.name.replacingOccurrences(of: "/", with: "-")
+        let environmentFileURL = environmentsURL.appendingPathComponent("\(safeFileName).env.json")
         
         let data = try jsonEncoder.encode(environment)
-        try data.write(to: environmentFileURL)
+        try data.write(to: environmentFileURL, options: .atomic)
     }
     
     func loadEnvironments(from workspaceURL: URL) async throws -> [APIEnvironment] {
@@ -150,12 +188,38 @@ class WorkspaceManager {
         
         for fileURL in contents {
             if fileURL.pathExtension == "json" && fileURL.lastPathComponent.contains(".env.") {
-                let data = try Data(contentsOf: fileURL)
-                let environment = try jsonDecoder.decode(APIEnvironment.self, from: data)
-                environments.append(environment)
+                do {
+                    let data = try Data(contentsOf: fileURL)
+                    let environment = try jsonDecoder.decode(APIEnvironment.self, from: data)
+                    environments.append(environment)
+                } catch {
+                    print("Failed to load environment from \(fileURL): \(error)")
+                }
             }
         }
         
         return environments
+    }
+}
+
+// MARK: - Errors
+
+enum WorkspaceError: LocalizedError {
+    case notFound
+    case alreadyExists(String)
+    case invalidFormat
+    case accessDenied
+    
+    var errorDescription: String? {
+        switch self {
+        case .notFound:
+            return "Workspace not found"
+        case .alreadyExists(let name):
+            return "A folder named '\(name)' already exists at this location"
+        case .invalidFormat:
+            return "Invalid workspace format"
+        case .accessDenied:
+            return "Access denied to the selected folder"
+        }
     }
 }

@@ -40,6 +40,10 @@ struct WorkspacePickerView: View {
             .labelsHidden()
             .frame(width: 240)
             .padding(.bottom, 20)
+            .onChange(of: isCreatingNew) { _, _ in
+                selectedURL = nil
+                errorText = nil
+            }
             
             // Form Content
             VStack(alignment: .leading, spacing: 16) {
@@ -79,9 +83,19 @@ struct WorkspacePickerView: View {
                             .frame(height: 22)
                             
                             Button("Browse...") {
-                                selectFolder()
+                                selectFolderForCreate()
                             }
                         }
+                    }
+                    
+                    // Preview path
+                    if let url = selectedURL, !workspaceName.isEmpty {
+                        let finalPath = url.appendingPathComponent(workspaceName).path
+                        Text("Will create: \(finalPath)")
+                            .font(.system(size: 10))
+                            .foregroundColor(.secondary)
+                            .lineLimit(1)
+                            .truncationMode(.middle)
                     }
                 } else {
                     // Workspace Field
@@ -109,7 +123,7 @@ struct WorkspacePickerView: View {
                             .frame(height: 22)
                             
                             Button("Browse...") {
-                                selectWorkspace()
+                                selectExistingWorkspace()
                             }
                         }
                     }
@@ -120,6 +134,7 @@ struct WorkspacePickerView: View {
                     Text(error)
                         .font(.system(size: 11))
                         .foregroundColor(.red)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
             }
             .padding(.horizontal, 28)
@@ -152,7 +167,7 @@ struct WorkspacePickerView: View {
             .padding(.horizontal, 20)
             .padding(.bottom, 20)
         }
-        .frame(width: 380, height: isCreatingNew ? 300 : 240)
+        .frame(width: 400, height: isCreatingNew ? 320 : 240)
         .background(VisualEffectView(material: .popover, blendingMode: .behindWindow))
         .clipShape(RoundedRectangle(cornerRadius: 12))
         .shadow(color: .black.opacity(0.3), radius: 20, x: 0, y: 10)
@@ -166,31 +181,42 @@ struct WorkspacePickerView: View {
         }
     }
     
-    private func selectFolder() {
+    private func selectFolderForCreate() {
         let panel = NSOpenPanel()
         panel.canChooseFiles = false
         panel.canChooseDirectories = true
+        panel.canCreateDirectories = true
         panel.allowsMultipleSelection = false
-        panel.message = "Choose where to create the workspace"
+        panel.message = "Choose where to create the workspace folder"
         panel.prompt = "Select"
+        panel.title = "Select Location"
         
-        if panel.runModal() == .OK {
-            selectedURL = panel.url
+        if panel.runModal() == .OK, let url = panel.url {
+            selectedURL = url
             errorText = nil
         }
     }
     
-    private func selectWorkspace() {
+    private func selectExistingWorkspace() {
         let panel = NSOpenPanel()
         panel.canChooseFiles = false
         panel.canChooseDirectories = true
+        panel.canCreateDirectories = false
         panel.allowsMultipleSelection = false
-        panel.message = "Select a RainyPost workspace folder"
+        panel.message = "Select a RainyPost workspace folder (contains workspace.json)"
         panel.prompt = "Open"
+        panel.title = "Open Workspace"
         
-        if panel.runModal() == .OK {
-            selectedURL = panel.url
-            errorText = nil
+        if panel.runModal() == .OK, let url = panel.url {
+            // Verify it's a valid workspace
+            let workspaceFile = url.appendingPathComponent("workspace.json")
+            if FileManager.default.fileExists(atPath: workspaceFile.path) {
+                selectedURL = url
+                errorText = nil
+            } else {
+                errorText = "Not a valid workspace folder (missing workspace.json)"
+                selectedURL = nil
+            }
         }
     }
     
@@ -201,21 +227,54 @@ struct WorkspacePickerView: View {
         errorText = nil
         
         Task {
-            if isCreatingNew {
-                let name = workspaceName.trimmingCharacters(in: .whitespaces)
-                await appState.createWorkspace(name: name, at: url)
-            } else {
-                await appState.openWorkspace(at: url)
+            do {
+                if isCreatingNew {
+                    let name = workspaceName.trimmingCharacters(in: .whitespaces)
+                    
+                    // Start security-scoped access
+                    guard url.startAccessingSecurityScopedResource() else {
+                        throw NSError(domain: "WorkspaceError", code: 1, userInfo: [NSLocalizedDescriptionKey: "Cannot access the selected folder"])
+                    }
+                    defer { url.stopAccessingSecurityScopedResource() }
+                    
+                    await appState.createWorkspace(name: name, at: url)
+                } else {
+                    // Start security-scoped access
+                    guard url.startAccessingSecurityScopedResource() else {
+                        throw NSError(domain: "WorkspaceError", code: 1, userInfo: [NSLocalizedDescriptionKey: "Cannot access the selected folder"])
+                    }
+                    defer { url.stopAccessingSecurityScopedResource() }
+                    
+                    await appState.openWorkspace(at: url)
+                }
+                
+                isProcessing = false
+                
+                if appState.currentWorkspace != nil {
+                    // Save bookmark for future access
+                    saveBookmark(for: isCreatingNew ? url.appendingPathComponent(workspaceName) : url)
+                    dismiss()
+                } else if let error = appState.errorMessage {
+                    errorText = error
+                    appState.errorMessage = nil
+                }
+            } catch {
+                isProcessing = false
+                errorText = error.localizedDescription
             }
-            
-            isProcessing = false
-            
-            if appState.currentWorkspace != nil {
-                dismiss()
-            } else if let error = appState.errorMessage {
-                errorText = error
-                appState.errorMessage = nil
-            }
+        }
+    }
+    
+    private func saveBookmark(for url: URL) {
+        do {
+            let bookmarkData = try url.bookmarkData(
+                options: .withSecurityScope,
+                includingResourceValuesForKeys: nil,
+                relativeTo: nil
+            )
+            UserDefaults.standard.set(bookmarkData, forKey: "lastWorkspaceBookmark")
+        } catch {
+            print("Failed to save bookmark: \(error)")
         }
     }
 }
