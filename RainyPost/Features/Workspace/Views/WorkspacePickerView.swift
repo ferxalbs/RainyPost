@@ -227,54 +227,21 @@ struct WorkspacePickerView: View {
         errorText = nil
         
         Task {
-            do {
-                if isCreatingNew {
-                    let name = workspaceName.trimmingCharacters(in: .whitespaces)
-                    
-                    // Start security-scoped access
-                    guard url.startAccessingSecurityScopedResource() else {
-                        throw NSError(domain: "WorkspaceError", code: 1, userInfo: [NSLocalizedDescriptionKey: "Cannot access the selected folder"])
-                    }
-                    defer { url.stopAccessingSecurityScopedResource() }
-                    
-                    await appState.createWorkspace(name: name, at: url)
-                } else {
-                    // Start security-scoped access
-                    guard url.startAccessingSecurityScopedResource() else {
-                        throw NSError(domain: "WorkspaceError", code: 1, userInfo: [NSLocalizedDescriptionKey: "Cannot access the selected folder"])
-                    }
-                    defer { url.stopAccessingSecurityScopedResource() }
-                    
-                    await appState.openWorkspace(at: url)
-                }
-                
-                isProcessing = false
-                
-                if appState.currentWorkspace != nil {
-                    // Save bookmark for future access
-                    saveBookmark(for: isCreatingNew ? url.appendingPathComponent(workspaceName) : url)
-                    dismiss()
-                } else if let error = appState.errorMessage {
-                    errorText = error
-                    appState.errorMessage = nil
-                }
-            } catch {
-                isProcessing = false
-                errorText = error.localizedDescription
+            if isCreatingNew {
+                let name = workspaceName.trimmingCharacters(in: .whitespaces)
+                await appState.createWorkspace(name: name, at: url)
+            } else {
+                await appState.openWorkspace(at: url)
             }
-        }
-    }
-    
-    private func saveBookmark(for url: URL) {
-        do {
-            let bookmarkData = try url.bookmarkData(
-                options: .withSecurityScope,
-                includingResourceValuesForKeys: nil,
-                relativeTo: nil
-            )
-            UserDefaults.standard.set(bookmarkData, forKey: "lastWorkspaceBookmark")
-        } catch {
-            print("Failed to save bookmark: \(error)")
+            
+            isProcessing = false
+            
+            if appState.currentWorkspace != nil {
+                dismiss()
+            } else if let error = appState.errorMessage {
+                errorText = error
+                appState.errorMessage = nil
+            }
         }
     }
 }

@@ -24,37 +24,62 @@ class WorkspaceManager {
     // MARK: - Workspace Operations
     
     func createWorkspace(_ workspace: Workspace, at parentURL: URL) async throws {
+        // Sanitize workspace name for filesystem
+        let safeName = workspace.name
+            .replacingOccurrences(of: "/", with: "-")
+            .replacingOccurrences(of: ":", with: "-")
+        
         // Create workspace directory with the workspace name
-        let workspaceURL = parentURL.appendingPathComponent(workspace.name)
+        let workspaceURL = parentURL.appendingPathComponent(safeName)
         
         // Check if directory already exists
-        if fileManager.fileExists(atPath: workspaceURL.path) {
-            throw WorkspaceError.alreadyExists(workspace.name)
+        var isDirectory: ObjCBool = false
+        if fileManager.fileExists(atPath: workspaceURL.path, isDirectory: &isDirectory) {
+            if isDirectory.boolValue {
+                throw WorkspaceError.alreadyExists(safeName)
+            }
         }
         
-        // Create main workspace directory
-        try fileManager.createDirectory(at: workspaceURL, withIntermediateDirectories: true, attributes: nil)
-        
-        // Create subdirectories
-        let collectionsURL = workspaceURL.appendingPathComponent("collections")
-        let environmentsURL = workspaceURL.appendingPathComponent("environments")
-        let rainypostURL = workspaceURL.appendingPathComponent(".rainypost")
-        
-        try fileManager.createDirectory(at: collectionsURL, withIntermediateDirectories: true, attributes: nil)
-        try fileManager.createDirectory(at: environmentsURL, withIntermediateDirectories: true, attributes: nil)
-        try fileManager.createDirectory(at: rainypostURL, withIntermediateDirectories: true, attributes: nil)
-        
-        // Save workspace.json
-        let workspaceFileURL = workspaceURL.appendingPathComponent("workspace.json")
-        let data = try jsonEncoder.encode(workspace)
-        try data.write(to: workspaceFileURL, options: .atomic)
-        
-        // Create a default environment
-        var defaultEnv = APIEnvironment(name: "Default")
-        defaultEnv.isActive = true
-        let envFileURL = environmentsURL.appendingPathComponent("Default.env.json")
-        let envData = try jsonEncoder.encode(defaultEnv)
-        try envData.write(to: envFileURL)
+        do {
+            // Create main workspace directory
+            try fileManager.createDirectory(at: workspaceURL, withIntermediateDirectories: true, attributes: nil)
+            
+            // Create subdirectories
+            let collectionsURL = workspaceURL.appendingPathComponent("collections")
+            let environmentsURL = workspaceURL.appendingPathComponent("environments")
+            let rainypostURL = workspaceURL.appendingPathComponent(".rainypost")
+            
+            try fileManager.createDirectory(at: collectionsURL, withIntermediateDirectories: true, attributes: nil)
+            try fileManager.createDirectory(at: environmentsURL, withIntermediateDirectories: true, attributes: nil)
+            try fileManager.createDirectory(at: rainypostURL, withIntermediateDirectories: true, attributes: nil)
+            
+            // Save workspace.json
+            let workspaceFileURL = workspaceURL.appendingPathComponent("workspace.json")
+            let data = try jsonEncoder.encode(workspace)
+            try data.write(to: workspaceFileURL)
+            
+            // Create a default environment
+            var defaultEnv = APIEnvironment(name: "Default")
+            defaultEnv.isActive = true
+            let envFileURL = environmentsURL.appendingPathComponent("Default.env.json")
+            let envData = try jsonEncoder.encode(defaultEnv)
+            try envData.write(to: envFileURL)
+        } catch let error as NSError {
+            // Clean up partial creation on failure
+            if fileManager.fileExists(atPath: workspaceURL.path) {
+                try? fileManager.removeItem(at: workspaceURL)
+            }
+            
+            if error.domain == NSCocoaErrorDomain {
+                switch error.code {
+                case NSFileWriteNoPermissionError, NSFileReadNoPermissionError:
+                    throw WorkspaceError.accessDenied
+                default:
+                    throw error
+                }
+            }
+            throw error
+        }
     }
     
     func loadWorkspace(from url: URL) async throws -> Workspace {
