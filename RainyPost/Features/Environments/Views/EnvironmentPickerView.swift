@@ -37,19 +37,25 @@ struct EnvironmentPickerView: View {
                 // TODO: Open environment manager
             }
         } label: {
-            HStack(spacing: 4) {
-                Image(systemName: "globe")
-                    .font(.system(size: 12))
+            HStack(spacing: 5) {
+                Circle()
+                    .fill(appState.activeEnvironment != nil ? Color.green : Color.secondary.opacity(0.3))
+                    .frame(width: 6, height: 6)
                 
                 Text(appState.activeEnvironment?.name ?? "No Environment")
-                    .font(.system(size: 12, weight: .medium))
+                    .font(.system(size: 11, weight: .medium))
                 
                 Image(systemName: "chevron.down")
-                    .font(.system(size: 8))
+                    .font(.system(size: 8, weight: .semibold))
             }
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
-            .background(.quaternary, in: RoundedRectangle(cornerRadius: 6))
+            .foregroundColor(.primary)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 5)
+            .background(.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 6))
+            .overlay(
+                RoundedRectangle(cornerRadius: 6)
+                    .strokeBorder(.white.opacity(0.1), lineWidth: 1)
+            )
         }
         .menuStyle(.borderlessButton)
     }
