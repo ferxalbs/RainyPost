@@ -10,6 +10,7 @@ import SwiftUI
 struct WorkspaceSidebarView: View {
     @EnvironmentObject private var appState: AppState
     @State private var expandedSections: Set<SidebarSection> = [.collections, .environments]
+    @State private var hoveredRequestId: UUID?
     
     enum SidebarSection: String, CaseIterable {
         case collections = "Collections"
@@ -18,192 +19,214 @@ struct WorkspaceSidebarView: View {
     }
     
     var body: some View {
-        List(selection: .constant(appState.selectedRequest?.id)) {
-            // Workspace Header
-            Section {
-                if let workspace = appState.currentWorkspace {
-                    HStack {
-                        Image(systemName: "folder.fill")
-                            .foregroundColor(.blue)
-                        
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(workspace.name)
-                                .font(.headline)
-                                .lineLimit(1)
-                            
-                            if let description = workspace.description {
-                                Text(description)
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                                    .lineLimit(1)
+        ZStack {
+            VisualEffectView(material: .sidebar, blendingMode: .behindWindow)
+            
+            ScrollView {
+                LazyVStack(spacing: 0, pinnedViews: [.sectionHeaders]) {
+                    // Workspace Header
+                    if let workspace = appState.currentWorkspace {
+                        workspaceHeader(workspace)
+                    }
+                    
+                    // Collections Section
+                    sectionView(
+                        section: .collections,
+                        content: {
+                            ForEach(appState.collections) { collection in
+                                CollectionRowView(collection: collection)
                             }
+                            
+                            ForEach(appState.requests.filter { $0.collectionId == nil }) { request in
+                                RequestRowView(request: request, isHovered: hoveredRequestId == request.id)
+                                    .onHover { hovering in
+                                        hoveredRequestId = hovering ? request.id : nil
+                                    }
+                            }
+                        },
+                        onAdd: {
+                            Task { await appState.createCollection(name: "New Collection") }
                         }
-                        
-                        Spacer()
-                    }
-                    .padding(.vertical, 4)
-                }
-            }
-            
-            // Collections Section
-            Section(isExpanded: .constant(expandedSections.contains(.collections))) {
-                ForEach(appState.collections) { collection in
-                    CollectionRowView(collection: collection)
-                }
-                
-                ForEach(appState.requests.filter { $0.collectionId == nil }) { request in
-                    RequestRowView(request: request)
-                }
-            } header: {
-                SectionHeaderView(
-                    title: "Collections",
-                    systemImage: "folder",
-                    isExpanded: expandedSections.contains(.collections),
-                    onToggle: { toggleSection(.collections) },
-                    onAdd: {
-                        Task {
-                            await appState.createCollection(name: "New Collection")
+                    )
+                    
+                    // Environments Section
+                    sectionView(
+                        section: .environments,
+                        content: {
+                            ForEach(appState.environments) { environment in
+                                EnvironmentRowView(environment: environment)
+                            }
+                        },
+                        onAdd: {
+                            Task { await appState.createEnvironment(name: "New Environment") }
                         }
-                    }
-                )
-            }
-            
-            // Environments Section
-            Section(isExpanded: .constant(expandedSections.contains(.environments))) {
-                ForEach(appState.environments) { environment in
-                    EnvironmentRowView(environment: environment)
+                    )
+                    
+                    // History Section
+                    sectionView(
+                        section: .history,
+                        content: {
+                            Text("Recent requests appear here")
+                                .font(.system(size: 11))
+                                .foregroundColor(.secondary.opacity(0.6))
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 8)
+                        },
+                        onAdd: nil
+                    )
                 }
-            } header: {
-                SectionHeaderView(
-                    title: "Environments",
-                    systemImage: "globe",
-                    isExpanded: expandedSections.contains(.environments),
-                    onToggle: { toggleSection(.environments) },
-                    onAdd: {
-                        Task {
-                            await appState.createEnvironment(name: "New Environment")
-                        }
-                    }
-                )
-            }
-            
-            // History Section
-            Section(isExpanded: .constant(expandedSections.contains(.history))) {
-                // TODO: History items
-                Text("Recent requests will appear here")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-                    .padding(.vertical, 8)
-            } header: {
-                SectionHeaderView(
-                    title: "History",
-                    systemImage: "clock",
-                    isExpanded: expandedSections.contains(.history),
-                    onToggle: { toggleSection(.history) },
-                    onAdd: nil
-                )
+                .padding(.vertical, 8)
             }
         }
-        .listStyle(.sidebar)
-        .background(VisualEffectView(material: .sidebar, blendingMode: .behindWindow))
+    }
+    
+    private func workspaceHeader(_ workspace: Workspace) -> some View {
+        HStack(spacing: 10) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 6)
+                    .fill(
+                        LinearGradient(
+                            colors: [.blue.opacity(0.8), .purple.opacity(0.6)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .frame(width: 28, height: 28)
+                
+                Image(systemName: "folder.fill")
+                    .font(.system(size: 12))
+                    .foregroundColor(.white)
+            }
+            
+            VStack(alignment: .leading, spacing: 1) {
+                Text(workspace.name)
+                    .font(.system(size: 12, weight: .semibold))
+                    .lineLimit(1)
+                
+                if let description = workspace.description {
+                    Text(description)
+                        .font(.system(size: 10))
+                        .foregroundColor(.secondary)
+                        .lineLimit(1)
+                }
+            }
+            
+            Spacer()
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+        .padding(.bottom, 4)
+    }
+    
+    @ViewBuilder
+    private func sectionView<Content: View>(
+        section: SidebarSection,
+        @ViewBuilder content: () -> Content,
+        onAdd: (() -> Void)?
+    ) -> some View {
+        VStack(spacing: 0) {
+            // Section Header
+            HStack(spacing: 6) {
+                Button(action: { toggleSection(section) }) {
+                    HStack(spacing: 4) {
+                        Image(systemName: expandedSections.contains(section) ? "chevron.down" : "chevron.right")
+                            .font(.system(size: 9, weight: .semibold))
+                            .foregroundColor(.secondary.opacity(0.6))
+                            .frame(width: 10)
+                        
+                        Text(section.rawValue.uppercased())
+                            .font(.system(size: 10, weight: .semibold))
+                            .foregroundColor(.secondary.opacity(0.7))
+                            .tracking(0.5)
+                    }
+                }
+                .buttonStyle(.plain)
+                
+                Spacer()
+                
+                if let onAdd = onAdd {
+                    Button(action: onAdd) {
+                        Image(systemName: "plus")
+                            .font(.system(size: 10, weight: .medium))
+                            .foregroundColor(.secondary.opacity(0.5))
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 6)
+            
+            // Section Content
+            if expandedSections.contains(section) {
+                content()
+            }
+        }
     }
     
     private func toggleSection(_ section: SidebarSection) {
-        if expandedSections.contains(section) {
-            expandedSections.remove(section)
-        } else {
-            expandedSections.insert(section)
-        }
-    }
-}
-
-struct SectionHeaderView: View {
-    let title: String
-    let systemImage: String
-    let isExpanded: Bool
-    let onToggle: () -> Void
-    let onAdd: (() -> Void)?
-    
-    var body: some View {
-        HStack {
-            Button(action: onToggle) {
-                HStack(spacing: 6) {
-                    Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
-                        .font(.system(size: 10, weight: .medium))
-                        .foregroundColor(.secondary)
-                    
-                    Image(systemName: systemImage)
-                        .font(.system(size: 12))
-                        .foregroundColor(.secondary)
-                    
-                    Text(title)
-                        .font(.system(size: 11, weight: .semibold))
-                        .foregroundColor(.secondary)
-                        .textCase(.uppercase)
-                }
-            }
-            .buttonStyle(.plain)
-            
-            Spacer()
-            
-            if let onAdd = onAdd {
-                Button(action: onAdd) {
-                    Image(systemName: "plus")
-                        .font(.system(size: 10))
-                        .foregroundColor(.secondary)
-                }
-                .buttonStyle(.plain)
-                .opacity(0.7)
-                .onHover { hovering in
-                    // Add hover effect
-                }
+        withAnimation(.easeInOut(duration: 0.2)) {
+            if expandedSections.contains(section) {
+                expandedSections.remove(section)
+            } else {
+                expandedSections.insert(section)
             }
         }
-        .padding(.horizontal, 4)
     }
 }
 
 struct CollectionRowView: View {
     let collection: Collection
     @EnvironmentObject private var appState: AppState
+    @State private var isHovered = false
     
     var body: some View {
-        HStack {
+        HStack(spacing: 8) {
             Image(systemName: "folder.fill")
-                .foregroundColor(.blue)
-                .font(.system(size: 14))
+                .foregroundColor(.blue.opacity(0.8))
+                .font(.system(size: 12))
             
             Text(collection.name)
-                .font(.system(size: 13))
+                .font(.system(size: 12))
+                .lineLimit(1)
             
             Spacer()
+            
+            Text("\(appState.requests.filter { $0.collectionId == collection.id }.count)")
+                .font(.system(size: 10))
+                .foregroundColor(.secondary.opacity(0.5))
         }
-        .padding(.vertical, 2)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 5)
+        .background(isHovered ? Color.white.opacity(0.05) : Color.clear, in: RoundedRectangle(cornerRadius: 5))
         .contentShape(Rectangle())
+        .onHover { hovering in isHovered = hovering }
     }
 }
 
 struct RequestRowView: View {
     let request: Request
+    let isHovered: Bool
     @EnvironmentObject private var appState: AppState
     
     var body: some View {
-        HStack {
-            // HTTP Method Badge
+        HStack(spacing: 8) {
             Text(request.method.rawValue)
-                .font(.system(size: 9, weight: .bold))
-                .foregroundColor(.white)
-                .padding(.horizontal, 6)
-                .padding(.vertical, 2)
-                .background(methodColor, in: RoundedRectangle(cornerRadius: 3))
+                .font(.system(size: 9, weight: .bold, design: .monospaced))
+                .foregroundColor(methodColor)
+                .frame(width: 36, alignment: .leading)
             
             Text(request.name)
-                .font(.system(size: 13))
+                .font(.system(size: 12))
                 .lineLimit(1)
             
             Spacer()
         }
-        .padding(.vertical, 2)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 5)
+        .background(
+            RoundedRectangle(cornerRadius: 5)
+                .fill(appState.selectedRequest?.id == request.id ? Color.blue.opacity(0.2) : (isHovered ? Color.white.opacity(0.05) : Color.clear))
+        )
         .contentShape(Rectangle())
         .onTapGesture {
             appState.selectedRequest = request
@@ -217,8 +240,7 @@ struct RequestRowView: View {
         case .PUT: return .orange
         case .PATCH: return .purple
         case .DELETE: return .red
-        case .HEAD: return .gray
-        case .OPTIONS: return .gray
+        case .HEAD, .OPTIONS: return .secondary
         }
     }
 }
@@ -226,25 +248,33 @@ struct RequestRowView: View {
 struct EnvironmentRowView: View {
     let environment: APIEnvironment
     @EnvironmentObject private var appState: AppState
+    @State private var isHovered = false
     
     var body: some View {
-        HStack {
-            Image(systemName: environment.isActive ? "circle.fill" : "circle")
-                .foregroundColor(environment.isActive ? .green : .secondary)
-                .font(.system(size: 8))
+        HStack(spacing: 8) {
+            Circle()
+                .fill(environment.isActive ? Color.green : Color.secondary.opacity(0.3))
+                .frame(width: 6, height: 6)
             
             Text(environment.name)
-                .font(.system(size: 13))
+                .font(.system(size: 12))
                 .fontWeight(environment.isActive ? .medium : .regular)
             
             Spacer()
-        }
-        .padding(.vertical, 2)
-        .contentShape(Rectangle())
-        .onTapGesture {
-            Task {
-                await appState.setActiveEnvironment(environment)
+            
+            if environment.isActive {
+                Text("Active")
+                    .font(.system(size: 9, weight: .medium))
+                    .foregroundColor(.green.opacity(0.8))
             }
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 5)
+        .background(isHovered ? Color.white.opacity(0.05) : Color.clear, in: RoundedRectangle(cornerRadius: 5))
+        .contentShape(Rectangle())
+        .onHover { hovering in isHovered = hovering }
+        .onTapGesture {
+            Task { await appState.setActiveEnvironment(environment) }
         }
     }
 }
@@ -252,5 +282,5 @@ struct EnvironmentRowView: View {
 #Preview {
     WorkspaceSidebarView()
         .environmentObject(AppState())
-        .frame(width: 280)
+        .frame(width: 260)
 }

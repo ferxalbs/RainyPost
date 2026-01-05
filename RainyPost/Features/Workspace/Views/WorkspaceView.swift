@@ -9,32 +9,36 @@ import SwiftUI
 
 struct WorkspaceView: View {
     @EnvironmentObject private var appState: AppState
-    @State private var sidebarWidth: CGFloat = 280
+    @State private var sidebarWidth: CGFloat = 260
     
     var body: some View {
-        NavigationSplitView {
+        HSplitView {
+            // Sidebar
             WorkspaceSidebarView()
-                .navigationSplitViewColumnWidth(min: 240, ideal: 280, max: 400)
-        } detail: {
-            if let selectedRequest = appState.selectedRequest {
-                RequestDetailView(request: selectedRequest)
-            } else {
-                EmptyStateView()
+                .frame(minWidth: 220, idealWidth: 260, maxWidth: 320)
+            
+            // Main Content
+            ZStack {
+                VisualEffectView(material: .contentBackground, blendingMode: .behindWindow)
+                
+                if let selectedRequest = appState.selectedRequest {
+                    RequestDetailView(request: selectedRequest)
+                } else {
+                    EmptyStateView()
+                }
             }
         }
-        .navigationSplitViewStyle(.balanced)
         .toolbar {
             ToolbarItemGroup(placement: .navigation) {
-                Button(action: {
-                    // Toggle sidebar
-                }) {
+                Button(action: {}) {
                     Image(systemName: "sidebar.left")
+                        .font(.system(size: 13))
                 }
                 .help("Toggle Sidebar")
             }
             
             ToolbarItemGroup(placement: .principal) {
-                if let environment = appState.activeEnvironment {
+                if appState.currentWorkspace != nil {
                     EnvironmentPickerView()
                 }
             }
@@ -46,15 +50,16 @@ struct WorkspaceView: View {
                     }
                 }) {
                     Image(systemName: "plus")
+                        .font(.system(size: 13))
                 }
-                .help("New Request")
+                .help("New Request (⌘N)")
+                .keyboardShortcut("n", modifiers: .command)
                 
-                Button(action: {
-                    // Command palette
-                }) {
+                Button(action: {}) {
                     Image(systemName: "magnifyingglass")
+                        .font(.system(size: 13))
                 }
-                .help("Search")
+                .help("Search (⌘K)")
                 .keyboardShortcut("k", modifiers: .command)
             }
         }
@@ -63,21 +68,20 @@ struct WorkspaceView: View {
 
 struct EmptyStateView: View {
     var body: some View {
-        VStack(spacing: 16) {
-            Image(systemName: "doc.text")
-                .font(.system(size: 48))
+        VStack(spacing: 12) {
+            Image(systemName: "arrow.left.circle")
+                .font(.system(size: 36, weight: .thin))
+                .foregroundColor(.secondary.opacity(0.5))
+            
+            Text("Select a Request")
+                .font(.system(size: 14, weight: .medium))
                 .foregroundColor(.secondary)
             
-            Text("No Request Selected")
-                .font(.title2)
-                .fontWeight(.medium)
-            
-            Text("Select a request from the sidebar or create a new one")
-                .foregroundColor(.secondary)
-                .multilineTextAlignment(.center)
+            Text("Choose from the sidebar or create a new one")
+                .font(.system(size: 12))
+                .foregroundColor(.secondary.opacity(0.7))
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(VisualEffectView(material: .windowBackground, blendingMode: .behindWindow))
     }
 }
 

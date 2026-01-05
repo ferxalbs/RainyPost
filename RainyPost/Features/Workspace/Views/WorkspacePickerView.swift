@@ -21,31 +21,33 @@ struct WorkspacePickerView: View {
             // Header
             HStack {
                 Text(isCreatingNew ? "Create Workspace" : "Open Workspace")
-                    .font(.title2)
-                    .fontWeight(.semibold)
+                    .font(.system(size: 15, weight: .semibold))
                 
                 Spacer()
                 
-                Button("Cancel") {
-                    dismiss()
+                Button(action: { dismiss() }) {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.system(size: 18))
+                        .foregroundColor(.secondary)
                 }
+                .buttonStyle(.plain)
                 .keyboardShortcut(.cancelAction)
             }
-            .padding(.horizontal, 24)
-            .padding(.vertical, 16)
-            .background(.regularMaterial, in: Rectangle())
+            .padding(.horizontal, 20)
+            .padding(.vertical, 14)
             
-            Divider()
+            Divider().opacity(0.5)
             
             // Content
-            VStack(spacing: 24) {
+            VStack(spacing: 20) {
                 // Mode Picker
                 Picker("Mode", selection: $isCreatingNew) {
                     Text("Create New").tag(true)
                     Text("Open Existing").tag(false)
                 }
                 .pickerStyle(.segmented)
-                .frame(maxWidth: 200)
+                .frame(maxWidth: 220)
+                .padding(.top, 8)
                 
                 if isCreatingNew {
                     createNewWorkspaceView
@@ -56,15 +58,17 @@ struct WorkspacePickerView: View {
                 Spacer()
                 
                 // Action Buttons
-                HStack {
+                HStack(spacing: 12) {
                     Button("Cancel") {
                         dismiss()
                     }
+                    .buttonStyle(.plain)
+                    .foregroundColor(.secondary)
                     .keyboardShortcut(.cancelAction)
                     
                     Spacer()
                     
-                    Button(isCreatingNew ? "Create" : "Open") {
+                    Button(action: {
                         Task {
                             if isCreatingNew {
                                 await createWorkspace()
@@ -72,63 +76,112 @@ struct WorkspacePickerView: View {
                                 await openWorkspace()
                             }
                         }
+                    }) {
+                        Text(isCreatingNew ? "Create" : "Open")
+                            .font(.system(size: 13, weight: .medium))
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 20)
+                            .padding(.vertical, 6)
+                            .background(
+                                RoundedRectangle(cornerRadius: 6)
+                                    .fill(canProceed ? Color.blue : Color.blue.opacity(0.4))
+                            )
                     }
+                    .buttonStyle(.plain)
                     .keyboardShortcut(.defaultAction)
-                    .disabled(isCreatingNew ? (workspaceName.isEmpty || selectedURL == nil) : selectedURL == nil)
+                    .disabled(!canProceed)
                 }
             }
-            .padding(24)
+            .padding(20)
         }
-        .frame(width: 480, height: 320)
-        .background(VisualEffectView(material: .windowBackground, blendingMode: .behindWindow))
+        .frame(width: 420, height: 280)
+        .background(
+            VisualEffectView(material: .popover, blendingMode: .behindWindow)
+        )
+    }
+    
+    private var canProceed: Bool {
+        isCreatingNew ? (!workspaceName.isEmpty && selectedURL != nil) : selectedURL != nil
     }
     
     private var createNewWorkspaceView: some View {
-        VStack(spacing: 16) {
-            VStack(alignment: .leading, spacing: 8) {
+        VStack(spacing: 14) {
+            VStack(alignment: .leading, spacing: 6) {
                 Text("Workspace Name")
-                    .font(.headline)
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundColor(.secondary)
                 
                 TextField("My API Project", text: $workspaceName)
-                    .textFieldStyle(.roundedBorder)
+                    .textFieldStyle(.plain)
+                    .font(.system(size: 13))
+                    .padding(8)
+                    .background(.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 6))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 6)
+                            .strokeBorder(.white.opacity(0.1), lineWidth: 1)
+                    )
             }
             
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: 6) {
                 Text("Location")
-                    .font(.headline)
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundColor(.secondary)
                 
-                HStack {
+                HStack(spacing: 8) {
                     Text(selectedURL?.path ?? "Choose a folder...")
+                        .font(.system(size: 12))
                         .foregroundColor(selectedURL == nil ? .secondary : .primary)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 6)
-                        .background(.quaternary, in: RoundedRectangle(cornerRadius: 6))
+                        .padding(8)
+                        .background(.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 6))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 6)
+                                .strokeBorder(.white.opacity(0.1), lineWidth: 1)
+                        )
                     
-                    Button("Browse...") {
+                    Button("Browse") {
                         showFolderPicker()
                     }
+                    .buttonStyle(.plain)
+                    .font(.system(size: 12, weight: .medium))
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(.white.opacity(0.1), in: RoundedRectangle(cornerRadius: 6))
                 }
             }
         }
     }
     
     private var openExistingWorkspaceView: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 6) {
             Text("Workspace Folder")
-                .font(.headline)
+                .font(.system(size: 12, weight: .medium))
+                .foregroundColor(.secondary)
             
-            HStack {
+            HStack(spacing: 8) {
                 Text(selectedURL?.path ?? "Choose workspace folder...")
+                    .font(.system(size: 12))
                     .foregroundColor(selectedURL == nil ? .secondary : .primary)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 6)
-                    .background(.quaternary, in: RoundedRectangle(cornerRadius: 6))
+                    .padding(8)
+                    .background(.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 6))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 6)
+                            .strokeBorder(.white.opacity(0.1), lineWidth: 1)
+                    )
                 
-                Button("Browse...") {
+                Button("Browse") {
                     showWorkspacePicker()
                 }
+                .buttonStyle(.plain)
+                .font(.system(size: 12, weight: .medium))
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
+                .background(.white.opacity(0.1), in: RoundedRectangle(cornerRadius: 6))
             }
         }
     }

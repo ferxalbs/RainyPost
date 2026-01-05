@@ -8,284 +8,228 @@
 import SwiftUI
 
 struct RequestDetailView: View {
-    let request: Request
-    @State private var selectedTab: RequestTab = .params
+    @EnvironmentObject private var appState: AppState
+    @StateObject private var viewModel: RequestViewModel
     
-    enum RequestTab: String, CaseIterable {
-        case params = "Params"
-        case headers = "Headers"
-        case auth = "Auth"
-        case body = "Body"
-        
-        var systemImage: String {
-            switch self {
-            case .params: return "questionmark.circle"
-            case .headers: return "list.bullet"
-            case .auth: return "key"
-            case .body: return "doc.text"
-            }
-        }
+    init(request: Request) {
+        _viewModel = StateObject(wrappedValue: RequestViewModel(request: request))
     }
     
     var body: some View {
-        VStack(spacing: 0) {
-            // Request Header
-            requestHeaderView
+        VSplitView {
+            // Request Builder
+            VStack(spacing: 0) {
+                requestHeaderView
+                Divider().opacity(0.5)
+                requestBuilderView
+            }
+            .frame(minHeight: 280)
             
-            Divider()
-            
-            // Request Builder Tabs
-            requestBuilderView
-            
-            Divider()
-            
-            // Response Area (placeholder)
-            responseAreaView
+            // Response Viewer
+            ResponseViewerView(viewModel: viewModel)
+                .frame(minHeight: 200)
         }
-        .background(VisualEffectView(material: .windowBackground, blendingMode: .behindWindow))
     }
     
     private var requestHeaderView: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: 10) {
             // Method Picker
             Menu {
                 ForEach(HTTPMethod.allCases, id: \.self) { method in
-                    Button(method.rawValue) {
-                        // TODO: Update request method
+                    Button(action: { viewModel.method = method }) {
+                        HStack {
+                            Text(method.rawValue)
+                            if viewModel.method == method {
+                                Image(systemName: "checkmark")
+                            }
+                        }
                     }
                 }
             } label: {
-                Text(request.method.rawValue)
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundColor(.white)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 6)
-                    .background(methodColor, in: RoundedRectangle(cornerRadius: 6))
+                HStack(spacing: 4) {
+                    Text(viewModel.method.rawValue)
+                        .font(.system(size: 12, weight: .bold, design: .monospaced))
+                    Image(systemName: "chevron.down")
+                        .font(.system(size: 8, weight: .semibold))
+                }
+                .foregroundColor(methodColor)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 6)
+                .background(.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 6))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 6)
+                        .strokeBorder(methodColor.opacity(0.3), lineWidth: 1)
+                )
             }
             .menuStyle(.borderlessButton)
+            .fixedSize()
             
             // URL Input
-            TextField("Enter URL", text: .constant(request.url))
-                .textFieldStyle(.roundedBorder)
-                .font(.system(size: 13).monospaced())
+            TextField("https://api.example.com/endpoint", text: $viewModel.url)
+                .textFieldStyle(.plain)
+                .font(.system(size: 13, design: .monospaced))
+                .padding(.horizontal, 10)
+                .padding(.vertical, 7)
+                .background(.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 6))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 6)
+                        .strokeBorder(.white.opacity(0.1), lineWidth: 1)
+                )
             
             // Send Button
-            Button("Send") {
-                // TODO: Execute request
+            Button(action: { Task { await viewModel.sendRequest() } }) {
+                HStack(spacing: 5) {
+                    if viewModel.isLoading {
+                        ProgressView()
+                            .scaleEffect(0.6)
+                            .frame(width: 12, height: 12)
+                    } else {
+                        Image(systemName: "paperplane.fill")
+                            .font(.system(size: 11))
+                    }
+                    Text("Send")
+                        .font(.system(size: 12, weight: .semibold))
+                }
+                .foregroundColor(.white)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 7)
+                .background(
+                    LinearGradient(
+                        colors: [.blue, .blue.opacity(0.8)],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    ),
+                    in: RoundedRectangle(cornerRadius: 6)
+                )
             }
-            .buttonStyle(.borderedProminent)
+            .buttonStyle(.plain)
+            .disabled(viewModel.isLoading || viewModel.url.isEmpty)
             .keyboardShortcut(.return, modifiers: .command)
         }
-        .padding(16)
+        .padding(12)
     }
     
     private var requestBuilderView: some View {
         VStack(spacing: 0) {
             // Tab Bar
-            tabBarView
+            RequestTabBar(selectedTab: $viewModel.selectedTab)
             
-            Divider()
+            Divider().opacity(0.3)
             
             // Tab Content
-            tabContentView
+            TabContentView(viewModel: viewModel)
         }
-        .frame(height: 300)
-    }
-    
-    private var tabBarView: some View {
-        HStack(spacing: 0) {
-            ForEach(RequestTab.allCases, id: \.self) { tab in
-                tabButton(for: tab)
-            }
-            Spacer()
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 8)
-    }
-    
-    private func tabButton(for tab: RequestTab) -> some View {
-        Button(action: {
-            selectedTab = tab
-        }) {
-            HStack(spacing: 6) {
-                Image(systemName: tab.systemImage)
-                    .font(.system(size: 11))
-                
-                Text(tab.rawValue)
-                    .font(.system(size: 12, weight: .medium))
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 8)
-            .background(
-                RoundedRectangle(cornerRadius: 6)
-                    .fill(selectedTab == tab ? AnyShapeStyle(.quaternary) : AnyShapeStyle(.clear))
-            )
-            .foregroundColor(selectedTab == tab ? .primary : .secondary)
-        }
-        .buttonStyle(.plain)
-    }
-    
-    private var tabContentView: some View {
-        Group {
-            switch selectedTab {
-            case .params:
-                ParamsTabView(queryParams: request.queryParams)
-            case .headers:
-                HeadersTabView(headers: request.headers)
-            case .auth:
-                AuthTabView(auth: request.auth)
-            case .body:
-                BodyTabView(requestBody: request.body)
-            }
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .padding(16)
-    }
-    
-    private var responseAreaView: some View {
-        VStack {
-            HStack {
-                Text("Response")
-                    .font(.headline)
-                
-                Spacer()
-                
-                Text("Ready to send request")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-            }
-            .padding(.horizontal, 16)
-            .padding(.top, 16)
-            
-            Spacer()
-            
-            Text("Response will appear here")
-                .foregroundColor(.secondary)
-                .font(.system(size: 14))
-            
-            Spacer()
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
     
     private var methodColor: Color {
-        switch request.method {
+        switch viewModel.method {
         case .GET: return .green
         case .POST: return .blue
         case .PUT: return .orange
         case .PATCH: return .purple
         case .DELETE: return .red
-        case .HEAD: return .gray
-        case .OPTIONS: return .gray
+        case .HEAD, .OPTIONS: return .secondary
         }
     }
 }
 
-// MARK: - Tab Views
+// MARK: - Request Tab Bar
 
-struct ParamsTabView: View {
-    let queryParams: [QueryParam]
+struct RequestTabBar: View {
+    @Binding var selectedTab: RequestTab
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Query Parameters")
-                .font(.system(size: 12, weight: .semibold))
-                .foregroundColor(.secondary)
-            
-            if queryParams.isEmpty {
-                Text("No parameters")
-                    .foregroundColor(.secondary)
-                    .font(.system(size: 13))
-            } else {
-                // TODO: Parameter editor
-                ForEach(queryParams) { param in
-                    HStack {
-                        Text(param.key)
-                        Text("=")
-                        Text(param.value)
-                    }
-                    .font(.system(size: 13).monospaced())
+        HStack(spacing: 0) {
+            ForEach(RequestTab.allCases, id: \.self) { tab in
+                TabButton(tab: tab, isSelected: selectedTab == tab) {
+                    selectedTab = tab
                 }
             }
+            Spacer()
         }
-        .frame(maxWidth: .infinity, alignment: .topLeading)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 6)
     }
 }
 
-struct HeadersTabView: View {
-    let headers: [Header]
+struct TabButton: View {
+    let tab: RequestTab
+    let isSelected: Bool
+    let action: () -> Void
+    @State private var isHovered = false
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Headers")
-                .font(.system(size: 12, weight: .semibold))
-                .foregroundColor(.secondary)
-            
-            if headers.isEmpty {
-                Text("No headers")
-                    .foregroundColor(.secondary)
-                    .font(.system(size: 13))
-            } else {
-                // TODO: Header editor
-                ForEach(headers) { header in
-                    HStack {
-                        Text(header.key)
-                        Text(":")
-                        Text(header.value)
-                    }
-                    .font(.system(size: 13).monospaced())
-                }
+        Button(action: action) {
+            HStack(spacing: 5) {
+                Image(systemName: tab.systemImage)
+                    .font(.system(size: 10))
+                Text(tab.rawValue)
+                    .font(.system(size: 11, weight: .medium))
             }
+            .foregroundColor(isSelected ? .primary : .secondary)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 5)
+            .background(
+                RoundedRectangle(cornerRadius: 5)
+                    .fill(isSelected ? Color.white.opacity(0.1) : (isHovered ? Color.white.opacity(0.05) : Color.clear))
+            )
         }
-        .frame(maxWidth: .infinity, alignment: .topLeading)
+        .buttonStyle(.plain)
+        .onHover { hovering in isHovered = hovering }
     }
 }
 
-struct AuthTabView: View {
-    let auth: AuthConfig?
+enum RequestTab: String, CaseIterable {
+    case params = "Params"
+    case headers = "Headers"
+    case auth = "Auth"
+    case body = "Body"
     
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Authentication")
-                .font(.system(size: 12, weight: .semibold))
-                .foregroundColor(.secondary)
-            
-            if auth == nil {
-                Text("No authentication")
-                    .foregroundColor(.secondary)
-                    .font(.system(size: 13))
-            } else {
-                Text("Authentication configured")
-                    .font(.system(size: 13))
-            }
+    var systemImage: String {
+        switch self {
+        case .params: return "questionmark.circle"
+        case .headers: return "list.bullet"
+        case .auth: return "key"
+        case .body: return "doc.text"
         }
-        .frame(maxWidth: .infinity, alignment: .topLeading)
     }
 }
 
-struct BodyTabView: View {
-    let requestBody: RequestBody?
+// MARK: - Tab Content
+
+struct TabContentView: View {
+    @ObservedObject var viewModel: RequestViewModel
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Request Body")
-                .font(.system(size: 12, weight: .semibold))
-                .foregroundColor(.secondary)
-            
-            if requestBody == nil {
-                Text("No body")
-                    .foregroundColor(.secondary)
-                    .font(.system(size: 13))
-            } else {
-                Text("Body configured")
-                    .font(.system(size: 13))
+        Group {
+            switch viewModel.selectedTab {
+            case .params:
+                KeyValueEditor(
+                    title: "Query Parameters",
+                    items: $viewModel.queryParams,
+                    keyPlaceholder: "Parameter",
+                    valuePlaceholder: "Value"
+                )
+            case .headers:
+                KeyValueEditor(
+                    title: "Headers",
+                    items: $viewModel.headers,
+                    keyPlaceholder: "Header",
+                    valuePlaceholder: "Value"
+                )
+            case .auth:
+                AuthConfigView(viewModel: viewModel)
+            case .body:
+                BodyEditorView(viewModel: viewModel)
             }
         }
-        .frame(maxWidth: .infinity, alignment: .topLeading)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .padding(12)
     }
 }
 
 #Preview {
-    RequestDetailView(request: Request(name: "Test Request", method: .GET, url: "https://api.example.com/users"))
+    RequestDetailView(request: Request(name: "Test", method: .GET, url: "https://api.example.com"))
+        .environmentObject(AppState())
         .frame(width: 800, height: 600)
 }
