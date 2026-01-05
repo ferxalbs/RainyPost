@@ -44,9 +44,6 @@ struct EnvironmentPickerView: View {
                 
                 Text(appState.activeEnvironment?.name ?? "No Environment")
                     .font(.system(size: 11))
-                
-                Image(systemName: "chevron.down")
-                    .font(.system(size: 8, weight: .semibold))
             }
         }
         .menuStyle(.borderlessButton)

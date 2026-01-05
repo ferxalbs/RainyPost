@@ -1,0 +1,95 @@
+RainyPost Open Source License
+Version 1.0, January 2026
+
+Copyright (c) 2026 RainyPost Contributors. All rights reserved.
+
+TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION
+
+1. DEFINITIONS
+
+"Software" refers to RainyPost and all associated source code, documentation,
+and assets contained in this repository.
+
+"Contributor" means any person or entity that creates or contributes to the
+Software.
+
+"You" means any individual or legal entity exercising permissions granted by
+this License.
+
+"Derivative Work" means any work that is based on or derived from the Software.
+
+2. GRANT OF LICENSE
+
+Subject to the terms and conditions of this License, each Contributor hereby
+grants to You a perpetual, worldwide, non-exclusive, royalty-free license to:
+
+  a) Use the Software for any purpose, including commercial applications
+  b) Copy, modify, and distribute the Software
+  c) Create and distribute Derivative Works
+  d) Sublicense the Software to third parties
+
+3. CONDITIONS
+
+Your exercise of the rights granted in Section 2 is subject to the following
+conditions:
+
+  a) ATTRIBUTION: You must give appropriate credit to "RainyPost" in any
+     distribution or Derivative Work. This includes retaining this license
+     file and any copyright notices in the source code.
+
+  b) SOURCE AVAILABILITY: If you distribute a Derivative Work, you must make
+     the complete source code available under this same License.
+
+  c) LICENSE PRESERVATION: Any distribution of the Software or Derivative
+     Works must include a copy of this License.
+
+  d) CHANGE DOCUMENTATION: If you modify the Software, you must include a
+     prominent notice stating that you have changed the files.
+
+4. COMMERCIAL USE
+
+Commercial use of the Software is permitted, provided that:
+
+  a) You comply with all conditions in Section 3
+  b) You do not represent the Software as your original creation
+  c) Any commercial product or service based on this Software includes
+     attribution to RainyPost
+
+5. NO TRADEMARK LICENSE
+
+This License does not grant permission to use the trade names, trademarks,
+service marks, or product names of any Contributor, except as required for
+reasonable and customary use in describing the origin of the Software.
+
+6. DISCLAIMER OF WARRANTY
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT, OR OTHERWISE, ARISING FROM,
+OUT OF, OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+7. LIMITATION OF LIABILITY
+
+IN NO EVENT AND UNDER NO LEGAL THEORY, WHETHER IN TORT (INCLUDING NEGLIGENCE),
+CONTRACT, OR OTHERWISE, SHALL ANY CONTRIBUTOR BE LIABLE TO YOU FOR DAMAGES,
+INCLUDING ANY DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES
+OF ANY CHARACTER ARISING AS A RESULT OF THIS LICENSE OR OUT OF THE USE OR
+INABILITY TO USE THE SOFTWARE.
+
+8. CONTRIBUTIONS
+
+Unless You explicitly state otherwise, any contribution intentionally submitted
+for inclusion in the Software by You shall be under the terms and conditions of
+this License, without any additional terms or conditions.
+
+9. TERMINATION
+
+This License and the rights granted hereunder will terminate automatically upon
+any breach by You of the terms of this License. Provisions which, by their
+nature, must remain in effect beyond the termination of this License shall
+survive.
+
+END OF TERMS AND CONDITIONS
