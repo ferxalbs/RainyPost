@@ -18,160 +18,102 @@ struct WorkspacePickerView: View {
     @State private var errorText: String?
     
     var body: some View {
-        VStack(spacing: 0) {
-            // Header
-            headerView
+        VStack(spacing: 20) {
+            // Mode Picker
+            Picker("", selection: $isCreatingNew) {
+                Text("Create New").tag(true)
+                Text("Open Existing").tag(false)
+            }
+            .pickerStyle(.segmented)
+            .labelsHidden()
+            .frame(width: 220)
             
-            Divider().opacity(0.4)
-            
-            // Content
+            // Form Content
             VStack(spacing: 16) {
-                // Mode Picker
-                Picker("", selection: $isCreatingNew) {
-                    Text("Create New").tag(true)
-                    Text("Open Existing").tag(false)
-                }
-                .pickerStyle(.segmented)
-                .labelsHidden()
-                .frame(width: 200)
-                
-                // Form
                 if isCreatingNew {
                     createNewForm
                 } else {
                     openExistingForm
                 }
-                
-                // Error
-                if let error = errorText {
-                    Text(error)
-                        .font(.system(size: 11))
-                        .foregroundColor(.red)
+            }
+            .frame(maxWidth: .infinity)
+            
+            // Error Message
+            if let error = errorText {
+                Text(error)
+                    .font(.system(size: 11))
+                    .foregroundColor(.red)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            
+            Spacer(minLength: 0)
+            
+            // Action Buttons
+            HStack(spacing: 12) {
+                Button("Cancel") {
+                    dismiss()
                 }
+                .keyboardShortcut(.cancelAction)
                 
-                Spacer(minLength: 0)
+                Spacer()
                 
-                // Buttons
-                footerButtons
+                Button(action: performAction) {
+                    if isProcessing {
+                        ProgressView()
+                            .controlSize(.small)
+                    } else {
+                        Text(isCreatingNew ? "Create" : "Open")
+                    }
+                }
+                .buttonStyle(.borderedProminent)
+                .keyboardShortcut(.defaultAction)
+                .disabled(!canProceed || isProcessing)
             }
-            .padding(20)
         }
-        .frame(width: 380, height: 220)
-        .background(Color(nsColor: .windowBackgroundColor))
-    }
-    
-    private var headerView: some View {
-        HStack {
-            Text(isCreatingNew ? "Create Workspace" : "Open Workspace")
-                .font(.system(size: 13, weight: .semibold))
-            Spacer()
-            Button(action: { dismiss() }) {
-                Image(systemName: "xmark.circle.fill")
-                    .font(.system(size: 16))
-                    .foregroundColor(.secondary)
-            }
-            .buttonStyle(.plain)
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
+        .padding(24)
+        .frame(width: 420, height: 240)
     }
     
     private var createNewForm: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            // Name field
-            VStack(alignment: .leading, spacing: 4) {
-                Text("Name")
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundColor(.secondary)
-                
-                TextField("My API Project", text: $workspaceName)
-                    .textFieldStyle(.roundedBorder)
-                    .font(.system(size: 12))
-            }
+        Form {
+            TextField("Name:", text: $workspaceName, prompt: Text("My API Project"))
             
-            // Location field
-            VStack(alignment: .leading, spacing: 4) {
-                Text("Location")
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundColor(.secondary)
-                
+            LabeledContent("Location:") {
                 HStack(spacing: 8) {
-                    Text(selectedURL?.path ?? "Select folder...")
-                        .font(.system(size: 11))
+                    Text(selectedURL?.lastPathComponent ?? "Select folder...")
                         .foregroundColor(selectedURL == nil ? .secondary : .primary)
                         .lineLimit(1)
-                        .truncationMode(.head)
+                        .truncationMode(.middle)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 6)
-                        .background(Color(nsColor: .textBackgroundColor))
-                        .cornerRadius(4)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 4)
-                                .stroke(Color(nsColor: .separatorColor), lineWidth: 0.5)
-                        )
                     
                     Button("Browse...") {
                         selectFolder()
                     }
-                    .font(.system(size: 11))
+                    .controlSize(.small)
                 }
             }
         }
+        .formStyle(.grouped)
     }
     
     private var openExistingForm: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text("Workspace Folder")
-                .font(.system(size: 11, weight: .medium))
-                .foregroundColor(.secondary)
-            
-            HStack(spacing: 8) {
-                Text(selectedURL?.path ?? "Select workspace...")
-                    .font(.system(size: 11))
-                    .foregroundColor(selectedURL == nil ? .secondary : .primary)
-                    .lineLimit(1)
-                    .truncationMode(.head)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 6)
-                    .background(Color(nsColor: .textBackgroundColor))
-                    .cornerRadius(4)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 4)
-                            .stroke(Color(nsColor: .separatorColor), lineWidth: 0.5)
-                    )
-                
-                Button("Browse...") {
-                    selectWorkspace()
-                }
-                .font(.system(size: 11))
-            }
-        }
-    }
-    
-    private var footerButtons: some View {
-        HStack {
-            Button("Cancel") {
-                dismiss()
-            }
-            .keyboardShortcut(.cancelAction)
-            
-            Spacer()
-            
-            Button(action: performAction) {
-                if isProcessing {
-                    ProgressView()
-                        .scaleEffect(0.6)
-                        .frame(width: 60)
-                } else {
-                    Text(isCreatingNew ? "Create" : "Open")
-                        .frame(width: 60)
+        Form {
+            LabeledContent("Workspace:") {
+                HStack(spacing: 8) {
+                    Text(selectedURL?.lastPathComponent ?? "Select workspace...")
+                        .foregroundColor(selectedURL == nil ? .secondary : .primary)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    
+                    Button("Browse...") {
+                        selectWorkspace()
+                    }
+                    .controlSize(.small)
                 }
             }
-            .keyboardShortcut(.defaultAction)
-            .disabled(!canProceed || isProcessing)
         }
+        .formStyle(.grouped)
     }
     
     private var canProceed: Bool {
