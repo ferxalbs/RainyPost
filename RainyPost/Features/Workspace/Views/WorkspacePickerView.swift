@@ -20,7 +20,6 @@ struct WorkspacePickerView: View {
     
     var body: some View {
         VStack(spacing: 0) {
-            // Header
             VStack(spacing: 4) {
                 Image(systemName: "folder.badge.plus")
                     .font(.system(size: 32, weight: .light))
@@ -32,7 +31,6 @@ struct WorkspacePickerView: View {
             .padding(.top, 24)
             .padding(.bottom, 20)
             
-            // Mode Picker
             Picker("", selection: $isCreatingNew) {
                 Text("Create New").tag(true)
                 Text("Open Existing").tag(false)
@@ -46,10 +44,8 @@ struct WorkspacePickerView: View {
                 errorText = nil
             }
             
-            // Form Content
             VStack(alignment: .leading, spacing: 16) {
                 if isCreatingNew {
-                    // Name Field
                     VStack(alignment: .leading, spacing: 6) {
                         Text("Name")
                             .font(.system(size: 11, weight: .medium))
@@ -59,78 +55,69 @@ struct WorkspacePickerView: View {
                             .textFieldStyle(.roundedBorder)
                     }
                     
-                    // Location Field
                     VStack(alignment: .leading, spacing: 6) {
                         Text("Location")
                             .font(.system(size: 11, weight: .medium))
                             .foregroundColor(.secondary)
                         
                         HStack(spacing: 8) {
-                            ZStack(alignment: .leading) {
-                                RoundedRectangle(cornerRadius: 5)
-                                    .fill(Color(nsColor: .controlBackgroundColor))
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 5)
-                                            .strokeBorder(Color(nsColor: .separatorColor), lineWidth: 1)
-                                    )
-                                
-                                Text(selectedURL?.path ?? "Select folder...")
-                                    .font(.system(size: 12))
-                                    .foregroundColor(selectedURL == nil ? .secondary : .primary)
-                                    .lineLimit(1)
-                                    .truncationMode(.middle)
-                                    .padding(.horizontal, 8)
-                            }
-                            .frame(height: 22)
+                            Text(selectedURL?.path ?? "Select folder...")
+                                .font(.system(size: 12))
+                                .foregroundColor(selectedURL == nil ? .secondary : .primary)
+                                .lineLimit(1)
+                                .truncationMode(.middle)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 6)
+                                .background(Color(nsColor: .controlBackgroundColor))
+                                .cornerRadius(5)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 5)
+                                        .strokeBorder(Color(nsColor: .separatorColor), lineWidth: 1)
+                                )
                             
                             Button("Browse...") {
-                                selectFolderForCreate()
+                                selectFolder()
                             }
                         }
                     }
                     
-                    // Preview path
                     if let url = selectedURL, !workspaceName.isEmpty {
-                        let finalPath = url.appendingPathComponent(workspaceName).path
-                        Text("Will create: \(finalPath)")
+                        Text("Will create: \(url.appendingPathComponent(workspaceName).path)")
                             .font(.system(size: 10))
                             .foregroundColor(.secondary)
                             .lineLimit(1)
                             .truncationMode(.middle)
                     }
                 } else {
-                    // Workspace Field
                     VStack(alignment: .leading, spacing: 6) {
                         Text("Workspace Folder")
                             .font(.system(size: 11, weight: .medium))
                             .foregroundColor(.secondary)
                         
                         HStack(spacing: 8) {
-                            ZStack(alignment: .leading) {
-                                RoundedRectangle(cornerRadius: 5)
-                                    .fill(Color(nsColor: .controlBackgroundColor))
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 5)
-                                            .strokeBorder(Color(nsColor: .separatorColor), lineWidth: 1)
-                                    )
-                                
-                                Text(selectedURL?.path ?? "Select workspace folder...")
-                                    .font(.system(size: 12))
-                                    .foregroundColor(selectedURL == nil ? .secondary : .primary)
-                                    .lineLimit(1)
-                                    .truncationMode(.middle)
-                                    .padding(.horizontal, 8)
-                            }
-                            .frame(height: 22)
+                            Text(selectedURL?.path ?? "Select workspace folder...")
+                                .font(.system(size: 12))
+                                .foregroundColor(selectedURL == nil ? .secondary : .primary)
+                                .lineLimit(1)
+                                .truncationMode(.middle)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 6)
+                                .background(Color(nsColor: .controlBackgroundColor))
+                                .cornerRadius(5)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 5)
+                                        .strokeBorder(Color(nsColor: .separatorColor), lineWidth: 1)
+                                )
                             
                             Button("Browse...") {
-                                selectExistingWorkspace()
+                                selectWorkspace()
                             }
                         }
                     }
                 }
                 
-                // Error Message
                 if let error = errorText {
                     Text(error)
                         .font(.system(size: 11))
@@ -142,7 +129,6 @@ struct WorkspacePickerView: View {
             
             Spacer()
             
-            // Action Buttons
             HStack(spacing: 12) {
                 Spacer()
                 
@@ -182,75 +168,35 @@ struct WorkspacePickerView: View {
         }
     }
     
-    private func selectFolderForCreate() {
-        // Dispatch to ensure we're on main thread and outside of any transaction
-        DispatchQueue.main.async {
-            let panel = NSOpenPanel()
-            panel.canChooseFiles = false
-            panel.canChooseDirectories = true
-            panel.canCreateDirectories = true
-            panel.allowsMultipleSelection = false
-            panel.message = "Choose where to create the workspace folder"
-            panel.prompt = "Select"
-            panel.title = "Select Location"
-            
-            // Use beginSheetModal for better compatibility with SwiftUI
-            if let window = NSApp.keyWindow {
-                panel.beginSheetModal(for: window) { response in
-                    if response == .OK, let url = panel.url {
-                        self.selectedURL = url
-                        self.errorText = nil
-                    }
-                }
-            } else {
-                // Fallback to modal
-                if panel.runModal() == .OK, let url = panel.url {
-                    self.selectedURL = url
-                    self.errorText = nil
-                }
-            }
+    private func selectFolder() {
+        let panel = NSOpenPanel()
+        panel.canChooseFiles = false
+        panel.canChooseDirectories = true
+        panel.canCreateDirectories = true
+        panel.allowsMultipleSelection = false
+        panel.prompt = "Select"
+        
+        if panel.runModal() == .OK {
+            selectedURL = panel.url
+            errorText = nil
         }
     }
     
-    private func selectExistingWorkspace() {
-        // Dispatch to ensure we're on main thread and outside of any transaction
-        DispatchQueue.main.async {
-            let panel = NSOpenPanel()
-            panel.canChooseFiles = false
-            panel.canChooseDirectories = true
-            panel.canCreateDirectories = false
-            panel.allowsMultipleSelection = false
-            panel.message = "Select a RainyPost workspace folder (contains workspace.json)"
-            panel.prompt = "Open"
-            panel.title = "Open Workspace"
-            
-            // Use beginSheetModal for better compatibility with SwiftUI
-            if let window = NSApp.keyWindow {
-                panel.beginSheetModal(for: window) { response in
-                    if response == .OK, let url = panel.url {
-                        // Verify it's a valid workspace
-                        let workspaceFile = url.appendingPathComponent("workspace.json")
-                        if FileManager.default.fileExists(atPath: workspaceFile.path) {
-                            self.selectedURL = url
-                            self.errorText = nil
-                        } else {
-                            self.errorText = "Not a valid workspace folder (missing workspace.json)"
-                            self.selectedURL = nil
-                        }
-                    }
-                }
+    private func selectWorkspace() {
+        let panel = NSOpenPanel()
+        panel.canChooseFiles = false
+        panel.canChooseDirectories = true
+        panel.allowsMultipleSelection = false
+        panel.prompt = "Open"
+        
+        if panel.runModal() == .OK, let url = panel.url {
+            let workspaceFile = url.appendingPathComponent("workspace.json")
+            if FileManager.default.fileExists(atPath: workspaceFile.path) {
+                selectedURL = url
+                errorText = nil
             } else {
-                // Fallback to modal
-                if panel.runModal() == .OK, let url = panel.url {
-                    let workspaceFile = url.appendingPathComponent("workspace.json")
-                    if FileManager.default.fileExists(atPath: workspaceFile.path) {
-                        self.selectedURL = url
-                        self.errorText = nil
-                    } else {
-                        self.errorText = "Not a valid workspace folder (missing workspace.json)"
-                        self.selectedURL = nil
-                    }
-                }
+                errorText = "Not a valid workspace (missing workspace.json)"
+                selectedURL = nil
             }
         }
     }
@@ -284,5 +230,4 @@ struct WorkspacePickerView: View {
 #Preview {
     WorkspacePickerView()
         .environmentObject(AppState())
-        .frame(width: 500, height: 400)
 }
